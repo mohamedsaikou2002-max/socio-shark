@@ -9,9 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UploadRouteImport } from './routes/upload'
+import { Route as ScheduledRouteImport } from './routes/scheduled'
+import { Route as QueueRouteImport } from './routes/queue'
+import { Route as PostedRouteImport } from './routes/posted'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
+const UploadRoute = UploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScheduledRoute = ScheduledRouteImport.update({
+  id: '/scheduled',
+  path: '/scheduled',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QueueRoute = QueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostedRoute = PostedRouteImport.update({
+  id: '/posted',
+  path: '/posted',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -25,32 +49,95 @@ const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/posted': typeof PostedRoute
+  '/queue': typeof QueueRoute
+  '/scheduled': typeof ScheduledRoute
+  '/upload': typeof UploadRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/posted': typeof PostedRoute
+  '/queue': typeof QueueRoute
+  '/scheduled': typeof ScheduledRoute
+  '/upload': typeof UploadRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/posted': typeof PostedRoute
+  '/queue': typeof QueueRoute
+  '/scheduled': typeof ScheduledRoute
+  '/upload': typeof UploadRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/public/hooks/run-due'
+  fullPaths:
+    | '/'
+    | '/posted'
+    | '/queue'
+    | '/scheduled'
+    | '/upload'
+    | '/api/public/hooks/run-due'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/public/hooks/run-due'
-  id: '__root__' | '/' | '/api/public/hooks/run-due'
+  to:
+    | '/'
+    | '/posted'
+    | '/queue'
+    | '/scheduled'
+    | '/upload'
+    | '/api/public/hooks/run-due'
+  id:
+    | '__root__'
+    | '/'
+    | '/posted'
+    | '/queue'
+    | '/scheduled'
+    | '/upload'
+    | '/api/public/hooks/run-due'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PostedRoute: typeof PostedRoute
+  QueueRoute: typeof QueueRoute
+  ScheduledRoute: typeof ScheduledRoute
+  UploadRoute: typeof UploadRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scheduled': {
+      id: '/scheduled'
+      path: '/scheduled'
+      fullPath: '/scheduled'
+      preLoaderRoute: typeof ScheduledRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/queue': {
+      id: '/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof QueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/posted': {
+      id: '/posted'
+      path: '/posted'
+      fullPath: '/posted'
+      preLoaderRoute: typeof PostedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -70,8 +157,22 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PostedRoute: PostedRoute,
+  QueueRoute: QueueRoute,
+  ScheduledRoute: ScheduledRoute,
+  UploadRoute: UploadRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
