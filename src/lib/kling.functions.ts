@@ -15,6 +15,38 @@ async function klingToken() {
     .sign(new TextEncoder().encode(sk));
 }
 
+// Verifies Kling AK/SK by making a minimal authenticated request and reporting the raw result.
+export const testKlingAuth = createServerFn({ method: "POST" }).handler(async () => {
+  const ak = process.env.KLING_ACCESS_KEY;
+  const sk = process.env.KLING_SECRET_KEY;
+  if (!ak || !sk) {
+    return { ok: false, status: 0, code: null, message: "KLING_ACCESS_KEY or KLING_SECRET_KEY is not set",
+      akPreview: null, akLength: 0, skLength: 0 };
+  }
+  const akPreview = `${ak.slice(0, 4)}…${ak.slice(-4)} (len ${ak.length})`;
+  try {
+    const token = await klingToken();
+    // Hit a lightweight endpoint: list image2video tasks (auth-only, no body required)
+    const res = await fetch(`${KLING_BASE}/v1/videos/image2video?pageNum=1&pageSize=1`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const text = await res.text();
+    let body: unknown = text;
+    try { body = JSON.parse(text); } catch { /* keep as text */ }
+    const j = body as { code?: number; message?: string };
+    const ok = res.ok && j.code === 0;
+    return {
+      ok, status: res.status, code: j.code ?? null,
+      message: ok ? "Auth OK — Kling accepted the JWT" : (j.message ?? text.slice(0, 300)),
+      akPreview, akLength: ak.length, skLength: sk.length,
+    };
+  } catch (e) {
+    return { ok: false, status: 0, code: null,
+      message: e instanceof Error ? e.message : String(e),
+      akPreview, akLength: ak.length, skLength: sk.length };
+  }
+});
+
 function publicUrl(bucket: string, path: string) {
   return supabaseAdmin.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
