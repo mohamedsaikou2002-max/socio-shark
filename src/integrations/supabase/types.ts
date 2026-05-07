@@ -20,12 +20,16 @@ export type Database = {
           caption_tiktok: string | null
           created_at: string
           error: string | null
+          generation_prompt: string | null
+          generation_status: string | null
           id: string
           ig_post_id: string | null
+          kling_task_id: string | null
           notes: string | null
           platforms: string[]
           posted_at: string | null
           scheduled_for: string | null
+          source_image_path: string | null
           status: string
           tiktok_post_id: string | null
           vibe_id: string | null
@@ -37,12 +41,16 @@ export type Database = {
           caption_tiktok?: string | null
           created_at?: string
           error?: string | null
+          generation_prompt?: string | null
+          generation_status?: string | null
           id?: string
           ig_post_id?: string | null
+          kling_task_id?: string | null
           notes?: string | null
           platforms?: string[]
           posted_at?: string | null
           scheduled_for?: string | null
+          source_image_path?: string | null
           status?: string
           tiktok_post_id?: string | null
           vibe_id?: string | null
@@ -54,12 +62,16 @@ export type Database = {
           caption_tiktok?: string | null
           created_at?: string
           error?: string | null
+          generation_prompt?: string | null
+          generation_status?: string | null
           id?: string
           ig_post_id?: string | null
+          kling_task_id?: string | null
           notes?: string | null
           platforms?: string[]
           posted_at?: string | null
           scheduled_for?: string | null
+          source_image_path?: string | null
           status?: string
           tiktok_post_id?: string | null
           vibe_id?: string | null
@@ -75,6 +87,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products: {
+        Row: {
+          brief: string | null
+          created_at: string
+          id: string
+          image_path: string
+          name: string | null
+          videos_generated: number
+        }
+        Insert: {
+          brief?: string | null
+          created_at?: string
+          id?: string
+          image_path: string
+          name?: string | null
+          videos_generated?: number
+        }
+        Update: {
+          brief?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string
+          name?: string | null
+          videos_generated?: number
+        }
+        Relationships: []
       }
       schedule_slots: {
         Row: {
