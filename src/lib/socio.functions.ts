@@ -4,7 +4,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
 
 interface Vibe {
   name: string;
@@ -13,20 +14,24 @@ interface Vibe {
 }
 
 async function llm(prompt: string, max = 350): Promise<string> {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY missing");
-  const res = await fetch(LOVABLE_AI_URL, {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error("ANTHROPIC_API_KEY missing");
+  const res = await fetch(ANTHROPIC_URL, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    headers: {
+      "x-api-key": key,
+      "anthropic-version": "2023-06-01",
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+      model: ANTHROPIC_MODEL,
       max_tokens: max,
       messages: [{ role: "user", content: prompt }],
     }),
   });
-  if (!res.ok) throw new Error(`AI ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
   const j = await res.json();
-  return (j.choices?.[0]?.message?.content ?? "").trim();
+  return (j.content?.[0]?.text ?? "").trim();
 }
 
 function captionPrompt(vibe: Vibe, brief: string, platform: "tiktok" | "instagram") {
