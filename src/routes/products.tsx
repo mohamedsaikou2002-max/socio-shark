@@ -32,6 +32,61 @@ function ProductsPage() {
   const [duration, setDuration] = useState<5 | 10>(5);
   const [extraPrompt, setExtraPrompt] = useState("");
   const [generating, setGenerating] = useState<Set<string>>(new Set());
+  const [savingTitle, setSavingTitle] = useState("");
+  const [activePromptId, setActivePromptId] = useState<string | null>(null);
+
+  interface SavedPrompt {
+    id: string; title: string; prompt: string; vibe_id: string | null;
+    duration: number; use_count: number; last_used_at: string | null;
+  }
+
+  const { data: savedPrompts = [] } = useQuery({
+    queryKey: ["saved_prompts"],
+    queryFn: async () => {
+      const { data } = await supabase.from("saved_prompts").select("*")
+        .order("last_used_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      return (data ?? []) as SavedPrompt[];
+    },
+  });
+
+  async function savePrompt() {
+    const title = savingTitle.trim();
+    if (!title) { toast.error("Give it a title"); return; }
+    if (!extraPrompt.trim()) { toast.error("Prompt is empty"); return; }
+    const { error } = await supabase.from("saved_prompts").insert({
+      title, prompt: extraPrompt.trim(), vibe_id: vibeId || null, duration,
+    });
+    if (error) { toast.error(error.message); return; }
+    setSavingTitle("");
+    qc.invalidateQueries({ queryKey: ["saved_prompts"] });
+    toast.success("Prompt saved");
+  }
+
+  async function updateActivePrompt() {
+    if (!activePromptId) return;
+    const { error } = await supabase.from("saved_prompts").update({
+      prompt: extraPrompt.trim(), vibe_id: vibeId || null, duration,
+    }).eq("id", activePromptId);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["saved_prompts"] });
+    toast.success("Prompt updated");
+  }
+
+  function loadPrompt(p: SavedPrompt) {
+    setExtraPrompt(p.prompt);
+    setVibeId(p.vibe_id ?? "");
+    setDuration((p.duration === 10 ? 10 : 5) as 5 | 10);
+    setActivePromptId(p.id);
+    toast.success(`Loaded "${p.title}"`);
+  }
+
+  async function deletePrompt(id: string) {
+    if (!confirm("Delete this saved prompt?")) return;
+    await supabase.from("saved_prompts").delete().eq("id", id);
+    if (activePromptId === id) setActivePromptId(null);
+    qc.invalidateQueries({ queryKey: ["saved_prompts"] });
+  }
 
   const { data: products = [] } = useQuery({
     queryKey: ["products"],
