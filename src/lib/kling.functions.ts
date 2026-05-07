@@ -6,12 +6,14 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const KLING_BASE = "https://api-singapore.klingai.com";
 
 async function klingToken() {
-  const ak = process.env.KLING_ACCESS_KEY;
-  const sk = process.env.KLING_SECRET_KEY;
+  const ak = process.env.KLING_ACCESS_KEY?.trim().replace(/^["']|["']$/g, "");
+  const sk = process.env.KLING_SECRET_KEY?.trim().replace(/^["']|["']$/g, "");
   if (!ak || !sk) throw new Error("KLING_ACCESS_KEY / KLING_SECRET_KEY not set");
   const now = Math.floor(Date.now() / 1000);
+  // Kling requires these exact claims; iat is also expected by some validators.
   return await new SignJWT({ iss: ak, exp: now + 1800, nbf: now - 5 })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setIssuedAt(now)
     .sign(new TextEncoder().encode(sk));
 }
 
