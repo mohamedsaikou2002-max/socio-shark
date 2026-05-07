@@ -115,6 +115,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_prompts: {
+        Row: {
+          created_at: string
+          duration: number
+          id: string
+          last_used_at: string | null
+          prompt: string
+          title: string
+          updated_at: string
+          use_count: number
+          vibe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration?: number
+          id?: string
+          last_used_at?: string | null
+          prompt: string
+          title: string
+          updated_at?: string
+          use_count?: number
+          vibe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration?: number
+          id?: string
+          last_used_at?: string | null
+          prompt?: string
+          title?: string
+          updated_at?: string
+          use_count?: number
+          vibe_id?: string | null
+        }
+        Relationships: []
+      }
       schedule_slots: {
         Row: {
           created_at: string
