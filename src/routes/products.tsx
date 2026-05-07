@@ -147,6 +147,14 @@ function ProductsPage() {
     try {
       const r = await startFn({ data: { productId: p.id, vibeId: vibeId || undefined, prompt: extraPrompt || undefined, duration } });
       setGenerating((s) => new Set(s).add(r.postId));
+      if (activePromptId) {
+        const sp = savedPrompts.find((x) => x.id === activePromptId);
+        await supabase.from("saved_prompts").update({
+          use_count: (sp?.use_count ?? 0) + 1,
+          last_used_at: new Date().toISOString(),
+        }).eq("id", activePromptId);
+        qc.invalidateQueries({ queryKey: ["saved_prompts"] });
+      }
       toast.success("Generation started — check back in ~1–3 min");
       qc.invalidateQueries();
     } catch (e) {
