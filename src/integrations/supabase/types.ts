@@ -14,7 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      posts: {
+        Row: {
+          caption_instagram: string | null
+          caption_tiktok: string | null
+          created_at: string
+          error: string | null
+          id: string
+          ig_post_id: string | null
+          notes: string | null
+          platforms: string[]
+          posted_at: string | null
+          scheduled_for: string | null
+          status: string
+          tiktok_post_id: string | null
+          vibe_id: string | null
+          vibe_name: string | null
+          video_path: string
+        }
+        Insert: {
+          caption_instagram?: string | null
+          caption_tiktok?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          ig_post_id?: string | null
+          notes?: string | null
+          platforms?: string[]
+          posted_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          tiktok_post_id?: string | null
+          vibe_id?: string | null
+          vibe_name?: string | null
+          video_path: string
+        }
+        Update: {
+          caption_instagram?: string | null
+          caption_tiktok?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          ig_post_id?: string | null
+          notes?: string | null
+          platforms?: string[]
+          posted_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          tiktok_post_id?: string | null
+          vibe_id?: string | null
+          vibe_name?: string | null
+          video_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_vibe_id_fkey"
+            columns: ["vibe_id"]
+            isOneToOne: false
+            referencedRelation: "vibes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      schedule_slots: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          hour: number
+          id: string
+          minute: number
+          platforms: string[]
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          hour: number
+          id?: string
+          minute?: number
+          platforms?: string[]
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          hour?: number
+          id?: string
+          minute?: number
+          platforms?: string[]
+        }
+        Relationships: []
+      }
+      vibes: {
+        Row: {
+          caption_tone: string
+          created_at: string
+          id: string
+          music_mood: string | null
+          name: string
+          prompt_style: string
+          weight: number
+        }
+        Insert: {
+          caption_tone: string
+          created_at?: string
+          id?: string
+          music_mood?: string | null
+          name: string
+          prompt_style: string
+          weight?: number
+        }
+        Update: {
+          caption_tone?: string
+          created_at?: string
+          id?: string
+          music_mood?: string | null
+          name?: string
+          prompt_style?: string
+          weight?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
