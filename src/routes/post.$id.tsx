@@ -96,7 +96,7 @@ function PostDetail() {
   }
 
   async function del() {
-    if (!confirm("Delete this post?")) return;
+    if (!post || !confirm("Delete this post?")) return;
     await supabase.storage.from("videos").remove([post.video_path]);
     await supabase.from("posts").delete().eq("id", id);
     toast.success("Deleted");
