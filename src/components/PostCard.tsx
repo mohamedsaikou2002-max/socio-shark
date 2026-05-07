@@ -1,4 +1,5 @@
 import { Post, STATUS_LABEL, fmtDate, videoUrl } from "@/lib/socio-shared";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
 
 export function PostCard({ post, action }: { post: Post; action?: React.ReactNode }) {
@@ -6,9 +7,15 @@ export function PostCard({ post, action }: { post: Post; action?: React.ReactNod
     <div className="border border-border bg-card group">
       <Link to="/post/$id" params={{ id: post.id }} className="block">
         <div className="aspect-[9/16] bg-muted overflow-hidden relative">
-          <video src={videoUrl(post.video_path)} muted playsInline className="w-full h-full object-cover" />
+          {post.video_path ? (
+            <video src={videoUrl(post.video_path)} muted playsInline className="w-full h-full object-cover" />
+          ) : post.source_image_path ? (
+            <img src={supabase.storage.from("product-images").getPublicUrl(post.source_image_path).data.publicUrl} alt="" className="w-full h-full object-cover opacity-60" />
+          ) : (
+            <div className="w-full h-full" />
+          )}
           <div className="absolute top-2 left-2 px-2 py-0.5 bg-foreground text-background text-[10px] font-mono uppercase tracking-wider">
-            {STATUS_LABEL[post.status]}
+            {post.generation_status === "generating" ? "Generating…" : post.generation_status === "failed" ? "Gen failed" : STATUS_LABEL[post.status]}
           </div>
         </div>
       </Link>

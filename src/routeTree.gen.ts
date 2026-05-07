@@ -13,6 +13,7 @@ import { Route as UploadRouteImport } from './routes/upload'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduledRouteImport } from './routes/scheduled'
 import { Route as QueueRouteImport } from './routes/queue'
+import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PostedRouteImport } from './routes/posted'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
@@ -36,6 +37,11 @@ const ScheduledRoute = ScheduledRouteImport.update({
 const QueueRoute = QueueRouteImport.update({
   id: '/queue',
   path: '/queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PostedRoute = PostedRouteImport.update({
@@ -62,6 +68,7 @@ const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/posted': typeof PostedRoute
+  '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
   '/scheduled': typeof ScheduledRoute
   '/settings': typeof SettingsRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/posted': typeof PostedRoute
+  '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
   '/scheduled': typeof ScheduledRoute
   '/settings': typeof SettingsRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/posted': typeof PostedRoute
+  '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
   '/scheduled': typeof ScheduledRoute
   '/settings': typeof SettingsRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/posted'
+    | '/products'
     | '/queue'
     | '/scheduled'
     | '/settings'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/posted'
+    | '/products'
     | '/queue'
     | '/scheduled'
     | '/settings'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/posted'
+    | '/products'
     | '/queue'
     | '/scheduled'
     | '/settings'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PostedRoute: typeof PostedRoute
+  ProductsRoute: typeof ProductsRoute
   QueueRoute: typeof QueueRoute
   ScheduledRoute: typeof ScheduledRoute
   SettingsRoute: typeof SettingsRoute
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QueueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/posted': {
       id: '/posted'
       path: '/posted'
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PostedRoute: PostedRoute,
+  ProductsRoute: ProductsRoute,
   QueueRoute: QueueRoute,
   ScheduledRoute: ScheduledRoute,
   SettingsRoute: SettingsRoute,

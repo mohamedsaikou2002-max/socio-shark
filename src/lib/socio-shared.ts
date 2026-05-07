@@ -27,6 +27,8 @@ export interface Post {
   platforms: string[];
   error: string | null;
   notes: string | null;
+  generation_status: string | null;
+  source_image_path: string | null;
 }
 
 export function videoUrl(path: string) {

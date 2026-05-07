@@ -105,6 +105,8 @@ function Settings() {
         <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground">API tokens</h2>
         <p className="text-xs text-muted-foreground">Stored as encrypted Lovable Cloud secrets. Tell Socio-Shark to add them when you're ready:</p>
         <ul className="text-xs font-mono space-y-1 border border-border p-3">
+          <li>KLING_ACCESS_KEY <span className="text-muted-foreground">— from klingai.com → API</span></li>
+          <li>KLING_SECRET_KEY <span className="text-muted-foreground">— pairs with the access key for JWT auth</span></li>
           <li>META_ACCESS_TOKEN <span className="text-muted-foreground">— Meta Graph API token (for Instagram Reels)</span></li>
           <li>INSTAGRAM_ACCOUNT_ID <span className="text-muted-foreground">— your IG Professional account id</span></li>
           <li>TIKTOK_ACCESS_TOKEN <span className="text-muted-foreground">— TikTok Content Posting API token</span></li>
