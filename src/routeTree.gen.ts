@@ -10,15 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ScheduledRouteImport } from './routes/scheduled'
 import { Route as QueueRouteImport } from './routes/queue'
 import { Route as PostedRouteImport } from './routes/posted'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
   path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScheduledRoute = ScheduledRouteImport.update({
@@ -41,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PostIdRoute = PostIdRouteImport.update({
+  id: '/post/$id',
+  path: '/post/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
   id: '/api/public/hooks/run-due',
   path: '/api/public/hooks/run-due',
@@ -52,7 +64,9 @@ export interface FileRoutesByFullPath {
   '/posted': typeof PostedRoute
   '/queue': typeof QueueRoute
   '/scheduled': typeof ScheduledRoute
+  '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
+  '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
 }
 export interface FileRoutesByTo {
@@ -60,7 +74,9 @@ export interface FileRoutesByTo {
   '/posted': typeof PostedRoute
   '/queue': typeof QueueRoute
   '/scheduled': typeof ScheduledRoute
+  '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
+  '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
 }
 export interface FileRoutesById {
@@ -69,7 +85,9 @@ export interface FileRoutesById {
   '/posted': typeof PostedRoute
   '/queue': typeof QueueRoute
   '/scheduled': typeof ScheduledRoute
+  '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
+  '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
 }
 export interface FileRouteTypes {
@@ -79,7 +97,9 @@ export interface FileRouteTypes {
     | '/posted'
     | '/queue'
     | '/scheduled'
+    | '/settings'
     | '/upload'
+    | '/post/$id'
     | '/api/public/hooks/run-due'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -87,7 +107,9 @@ export interface FileRouteTypes {
     | '/posted'
     | '/queue'
     | '/scheduled'
+    | '/settings'
     | '/upload'
+    | '/post/$id'
     | '/api/public/hooks/run-due'
   id:
     | '__root__'
@@ -95,7 +117,9 @@ export interface FileRouteTypes {
     | '/posted'
     | '/queue'
     | '/scheduled'
+    | '/settings'
     | '/upload'
+    | '/post/$id'
     | '/api/public/hooks/run-due'
   fileRoutesById: FileRoutesById
 }
@@ -104,7 +128,9 @@ export interface RootRouteChildren {
   PostedRoute: typeof PostedRoute
   QueueRoute: typeof QueueRoute
   ScheduledRoute: typeof ScheduledRoute
+  SettingsRoute: typeof SettingsRoute
   UploadRoute: typeof UploadRoute
+  PostIdRoute: typeof PostIdRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
 }
 
@@ -115,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/upload'
       fullPath: '/upload'
       preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scheduled': {
@@ -145,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/post/$id': {
+      id: '/post/$id'
+      path: '/post/$id'
+      fullPath: '/post/$id'
+      preLoaderRoute: typeof PostIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-due': {
       id: '/api/public/hooks/run-due'
       path: '/api/public/hooks/run-due'
@@ -160,7 +200,9 @@ const rootRouteChildren: RootRouteChildren = {
   PostedRoute: PostedRoute,
   QueueRoute: QueueRoute,
   ScheduledRoute: ScheduledRoute,
+  SettingsRoute: SettingsRoute,
   UploadRoute: UploadRoute,
+  PostIdRoute: PostIdRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
 }
 export const routeTree = rootRouteImport
