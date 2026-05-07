@@ -16,6 +16,28 @@ function Settings() {
   const [brief, setBrief] = useState("");
   useEffect(() => { setBrief(localStorage.getItem("socio-brief") ?? ""); }, []);
 
+  const testKling = useServerFn(testKlingAuth);
+  const [testing, setTesting] = useState(false);
+  const [klingResult, setKlingResult] = useState<null | {
+    ok: boolean; status: number; code: number | null; message: string;
+    akPreview: string | null; akLength: number; skLength: number;
+  }>(null);
+
+  async function runKlingTest() {
+    setTesting(true);
+    setKlingResult(null);
+    try {
+      const r = await testKling({ data: undefined as never });
+      setKlingResult(r);
+      if (r.ok) toast.success("Kling auth OK");
+      else toast.error(`Kling auth failed (HTTP ${r.status})`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setKlingResult({ ok: false, status: 0, code: null, message: msg, akPreview: null, akLength: 0, skLength: 0 });
+      toast.error(msg);
+    } finally { setTesting(false); }
+  }
+
   const { data: slots = [] } = useQuery({
     queryKey: ["slots"],
     queryFn: async () => {
