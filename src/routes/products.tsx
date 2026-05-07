@@ -210,12 +210,55 @@ function ProductsPage() {
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-mono uppercase block mb-1">Extra prompt (optional)</label>
-            <input value={extraPrompt} onChange={(e) => setExtraPrompt(e.target.value)} placeholder="e.g. slow zoom, golden hour"
-              className="w-full bg-background border border-border px-2 py-1.5 text-sm font-mono" />
+            <label className="text-[10px] font-mono uppercase block mb-1">Prompt</label>
+            <textarea value={extraPrompt} onChange={(e) => { setExtraPrompt(e.target.value); }} placeholder="e.g. slow zoom, golden hour, cinematic"
+              rows={2} className="w-full bg-background border border-border px-2 py-1.5 text-sm font-mono resize-y" />
           </div>
         </div>
+
+        {/* Save / update prompt row */}
+        <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-border">
+          <input value={savingTitle} onChange={(e) => setSavingTitle(e.target.value)} placeholder="Title to save current prompt as…"
+            className="flex-1 min-w-[180px] bg-background border border-border px-2 py-1.5 text-xs font-mono" />
+          <button onClick={savePrompt} className="px-3 py-1.5 text-[11px] font-mono border border-border hover:bg-foreground hover:text-background">+ Save prompt</button>
+          {activePromptId && (
+            <>
+              <span className="text-[10px] font-mono text-muted-foreground">editing: {savedPrompts.find(p => p.id === activePromptId)?.title}</span>
+              <button onClick={updateActivePrompt} className="px-3 py-1.5 text-[11px] font-mono bg-foreground text-background">Update</button>
+              <button onClick={() => setActivePromptId(null)} className="px-2 py-1.5 text-[10px] font-mono border border-border">Clear</button>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Saved prompts library */}
+      {savedPrompts.length > 0 && (
+        <div className="border border-border p-4 space-y-2">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Saved prompts ({savedPrompts.length})</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {savedPrompts.map((sp) => {
+              const vibeName = vibes.find((v) => v.id === sp.vibe_id)?.name;
+              const isActive = sp.id === activePromptId;
+              return (
+                <div key={sp.id} className={`border p-2 space-y-1 ${isActive ? "border-foreground" : "border-border"}`}>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold flex-1 truncate">{sp.title}</p>
+                    <span className="text-[9px] font-mono text-muted-foreground">{sp.use_count}×</span>
+                  </div>
+                  <p className="text-[10px] font-mono text-muted-foreground line-clamp-2">{sp.prompt}</p>
+                  <p className="text-[9px] font-mono text-muted-foreground">
+                    {sp.duration}s · {vibeName ?? "random vibe"}
+                  </p>
+                  <div className="flex gap-1 pt-1">
+                    <button onClick={() => loadPrompt(sp)} className="flex-1 text-[10px] font-mono py-1 bg-foreground text-background">Load</button>
+                    <button onClick={() => deletePrompt(sp.id)} className="px-2 text-[10px] font-mono border border-border hover:bg-destructive hover:text-destructive-foreground">Del</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Grid */}
       {products.length === 0 ? (
