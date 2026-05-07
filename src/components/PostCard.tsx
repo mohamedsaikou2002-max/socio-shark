@@ -1,4 +1,5 @@
 import { Post, STATUS_LABEL, fmtDate, videoUrl } from "@/lib/socio-shared";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
 
 export function PostCard({ post, action }: { post: Post; action?: React.ReactNode }) {
