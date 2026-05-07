@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Vibe } from "@/lib/socio-shared";
+import { testKlingAuth } from "@/lib/kling.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({ component: Settings });
@@ -13,6 +15,28 @@ function Settings() {
   const qc = useQueryClient();
   const [brief, setBrief] = useState("");
   useEffect(() => { setBrief(localStorage.getItem("socio-brief") ?? ""); }, []);
+
+  const testKling = useServerFn(testKlingAuth);
+  const [testing, setTesting] = useState(false);
+  const [klingResult, setKlingResult] = useState<null | {
+    ok: boolean; status: number; code: number | null; message: string;
+    akPreview: string | null; akLength: number; skLength: number;
+  }>(null);
+
+  async function runKlingTest() {
+    setTesting(true);
+    setKlingResult(null);
+    try {
+      const r = await testKling({ data: undefined as never });
+      setKlingResult(r);
+      if (r.ok) toast.success("Kling auth OK");
+      else toast.error(`Kling auth failed (HTTP ${r.status})`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setKlingResult({ ok: false, status: 0, code: null, message: msg, akPreview: null, akLength: 0, skLength: 0 });
+      toast.error(msg);
+    } finally { setTesting(false); }
+  }
 
   const { data: slots = [] } = useQuery({
     queryKey: ["slots"],
@@ -111,6 +135,28 @@ function Settings() {
           <li>INSTAGRAM_ACCOUNT_ID <span className="text-muted-foreground">— your IG Professional account id</span></li>
           <li>TIKTOK_ACCESS_TOKEN <span className="text-muted-foreground">— TikTok Content Posting API token</span></li>
         </ul>
+
+        <div className="space-y-2 pt-2">
+          <button
+            onClick={runKlingTest}
+            disabled={testing}
+            className="px-4 py-2 bg-foreground text-background text-sm font-mono disabled:opacity-40"
+          >
+            {testing ? "Testing…" : "Test Kling API"}
+          </button>
+          {klingResult && (
+            <div className={`border p-3 text-xs font-mono space-y-1 ${klingResult.ok ? "border-foreground" : "border-destructive"}`}>
+              <p className={klingResult.ok ? "" : "text-destructive"}>
+                {klingResult.ok ? "✓ OK" : "✗ FAILED"} · HTTP {klingResult.status}
+                {klingResult.code !== null && ` · code ${klingResult.code}`}
+              </p>
+              <p className="text-muted-foreground break-words">{klingResult.message}</p>
+              <p className="text-muted-foreground">
+                AK: {klingResult.akPreview ?? "—"} · SK length: {klingResult.skLength}
+              </p>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
