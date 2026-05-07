@@ -10,7 +10,7 @@ export function PostCard({ post, action }: { post: Post; action?: React.ReactNod
           {post.video_path ? (
             <video src={videoUrl(post.video_path)} muted playsInline className="w-full h-full object-cover" />
           ) : post.source_image_path ? (
-            <img src={`${videoUrl("").replace("/videos/", "/product-images/")}${post.source_image_path}`} alt="" className="w-full h-full object-cover opacity-60" />
+            <img src={supabase.storage.from("product-images").getPublicUrl(post.source_image_path).data.publicUrl} alt="" className="w-full h-full object-cover opacity-60" />
           ) : (
             <div className="w-full h-full" />
           )}
