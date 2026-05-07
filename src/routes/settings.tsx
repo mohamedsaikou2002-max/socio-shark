@@ -135,6 +135,28 @@ function Settings() {
           <li>INSTAGRAM_ACCOUNT_ID <span className="text-muted-foreground">— your IG Professional account id</span></li>
           <li>TIKTOK_ACCESS_TOKEN <span className="text-muted-foreground">— TikTok Content Posting API token</span></li>
         </ul>
+
+        <div className="space-y-2 pt-2">
+          <button
+            onClick={runKlingTest}
+            disabled={testing}
+            className="px-4 py-2 bg-foreground text-background text-sm font-mono disabled:opacity-40"
+          >
+            {testing ? "Testing…" : "Test Kling API"}
+          </button>
+          {klingResult && (
+            <div className={`border p-3 text-xs font-mono space-y-1 ${klingResult.ok ? "border-foreground" : "border-destructive"}`}>
+              <p className={klingResult.ok ? "" : "text-destructive"}>
+                {klingResult.ok ? "✓ OK" : "✗ FAILED"} · HTTP {klingResult.status}
+                {klingResult.code !== null && ` · code ${klingResult.code}`}
+              </p>
+              <p className="text-muted-foreground break-words">{klingResult.message}</p>
+              <p className="text-muted-foreground">
+                AK: {klingResult.akPreview ?? "—"} · SK length: {klingResult.skLength}
+              </p>
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
