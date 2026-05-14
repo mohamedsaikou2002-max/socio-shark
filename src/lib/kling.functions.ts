@@ -2,15 +2,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { SignJWT } from "jose";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getSecret } from "@/lib/secrets.functions";
 
 const KLING_BASE = "https://api-singapore.klingai.com";
 
 async function klingToken() {
-  const ak = process.env.KLING_ACCESS_KEY?.trim().replace(/^["']|["']$/g, "");
-  const sk = process.env.KLING_SECRET_KEY?.trim().replace(/^["']|["']$/g, "");
-  if (!ak || !sk) throw new Error("KLING_ACCESS_KEY / KLING_SECRET_KEY not set");
+  const ak = (await getSecret("KLING_ACCESS_KEY"))?.trim().replace(/^["']|["']$/g, "");
+  const sk = (await getSecret("KLING_SECRET_KEY"))?.trim().replace(/^["']|["']$/g, "");
+  if (!ak || !sk) throw new Error("KLING_ACCESS_KEY / KLING_SECRET_KEY not set — add them in Settings → API Tokens");
   const now = Math.floor(Date.now() / 1000);
-  // Kling requires these exact claims; iat is also expected by some validators.
   return await new SignJWT({ iss: ak, exp: now + 1800, nbf: now - 5 })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuedAt(now)
@@ -19,10 +19,10 @@ async function klingToken() {
 
 // Verifies Kling AK/SK by making a minimal authenticated request and reporting the raw result.
 export const testKlingAuth = createServerFn({ method: "POST" }).handler(async () => {
-  const ak = process.env.KLING_ACCESS_KEY;
-  const sk = process.env.KLING_SECRET_KEY;
+  const ak = await getSecret("KLING_ACCESS_KEY");
+  const sk = await getSecret("KLING_SECRET_KEY");
   if (!ak || !sk) {
-    return { ok: false, status: 0, code: null, message: "KLING_ACCESS_KEY or KLING_SECRET_KEY is not set",
+    return { ok: false, status: 0, code: null, message: "KLING_ACCESS_KEY or KLING_SECRET_KEY is not set — add them in Settings → API Tokens",
       akPreview: null, akLength: 0, skLength: 0 };
   }
   const akPreview = `${ak.slice(0, 4)}…${ak.slice(-4)} (len ${ak.length})`;

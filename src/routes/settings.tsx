@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Vibe } from "@/lib/socio-shared";
 import { testKlingAuth } from "@/lib/kling.functions";
+import { saveSecret, listSecretKeys, deleteSecret } from "@/lib/secrets.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({ component: Settings });
@@ -17,11 +18,60 @@ function Settings() {
   useEffect(() => { setBrief(localStorage.getItem("socio-brief") ?? ""); }, []);
 
   const testKling = useServerFn(testKlingAuth);
+  const saveFn = useServerFn(saveSecret);
+  const deleteFn = useServerFn(deleteSecret);
+  const listFn = useServerFn(listSecretKeys);
+
   const [testing, setTesting] = useState(false);
   const [klingResult, setKlingResult] = useState<null | {
     ok: boolean; status: number; code: number | null; message: string;
     akPreview: string | null; akLength: number; skLength: number;
   }>(null);
+
+  // Secret input states
+  const [secretInputs, setSecretInputs] = useState<Record<string, string>>({});
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+
+  const SECRET_KEYS = [
+    { key: "KLING_ACCESS_KEY", label: "Kling Access Key", hint: "klingai.com → API" },
+    { key: "KLING_SECRET_KEY", label: "Kling Secret Key", hint: "pairs with access key for JWT auth" },
+    { key: "ANTHROPIC_API_KEY", label: "Anthropic API Key", hint: "console.anthropic.com → API Keys" },
+    { key: "META_ACCESS_TOKEN", label: "Meta Access Token", hint: "Meta Graph API (Instagram Reels)" },
+    { key: "INSTAGRAM_ACCOUNT_ID", label: "Instagram Account ID", hint: "your IG Professional account id" },
+    { key: "TIKTOK_ACCESS_TOKEN", label: "TikTok Access Token", hint: "TikTok Content Posting API" },
+  ];
+
+  const { data: savedKeys = [] } = useQuery({
+    queryKey: ["secret-keys"],
+    queryFn: () => listFn({ data: undefined as never }),
+  });
+
+  const isSet = (key: string) => savedKeys.some((s) => s.key === key);
+
+  async function handleSaveSecret(key: string) {
+    const value = secretInputs[key]?.trim();
+    if (!value) { toast.error("Value cannot be empty"); return; }
+    setSavingKey(key);
+    try {
+      await saveFn({ data: { key, value } });
+      setSecretInputs((prev) => ({ ...prev, [key]: "" }));
+      toast.success(`${key} saved`);
+      qc.invalidateQueries({ queryKey: ["secret-keys"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    } finally { setSavingKey(null); }
+  }
+
+  async function handleDeleteSecret(key: string) {
+    if (!confirm(`Remove ${key}?`)) return;
+    try {
+      await deleteFn({ data: { key } });
+      toast.success(`${key} removed`);
+      qc.invalidateQueries({ queryKey: ["secret-keys"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed");
+    }
+  }
 
   async function runKlingTest() {
     setTesting(true);
@@ -127,14 +177,46 @@ function Settings() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground">API tokens</h2>
-        <p className="text-xs text-muted-foreground">Stored as encrypted Lovable Cloud secrets. Tell Socio-Shark to add them when you're ready:</p>
-        <ul className="text-xs font-mono space-y-1 border border-border p-3">
-          <li>KLING_ACCESS_KEY <span className="text-muted-foreground">— from klingai.com → API</span></li>
-          <li>KLING_SECRET_KEY <span className="text-muted-foreground">— pairs with the access key for JWT auth</span></li>
-          <li>META_ACCESS_TOKEN <span className="text-muted-foreground">— Meta Graph API token (for Instagram Reels)</span></li>
-          <li>INSTAGRAM_ACCOUNT_ID <span className="text-muted-foreground">— your IG Professional account id</span></li>
-          <li>TIKTOK_ACCESS_TOKEN <span className="text-muted-foreground">— TikTok Content Posting API token</span></li>
-        </ul>
+        <p className="text-xs text-muted-foreground">Stored server-side only. The browser never sees the values.</p>
+        <div className="space-y-3">
+          {SECRET_KEYS.map(({ key, label, hint }) => (
+            <div key={key} className="border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-mono font-bold">{label}</p>
+                  <p className="text-[10px] font-mono text-muted-foreground">{hint}</p>
+                </div>
+                <span className={`text-[10px] font-mono px-2 py-1 border ${isSet(key) ? "border-green-700 text-green-500" : "border-border text-muted-foreground"}`}>
+                  {isSet(key) ? "✓ SET" : "NOT SET"}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="password"
+                  placeholder={isSet(key) ? "Enter new value to update…" : "Paste value here…"}
+                  value={secretInputs[key] ?? ""}
+                  onChange={(e) => setSecretInputs((prev) => ({ ...prev, [key]: e.target.value }))}
+                  className="flex-1 bg-background border border-border px-3 py-1.5 text-sm font-mono"
+                />
+                <button
+                  onClick={() => handleSaveSecret(key)}
+                  disabled={savingKey === key || !secretInputs[key]?.trim()}
+                  className="px-3 py-1.5 bg-foreground text-background text-xs font-mono disabled:opacity-40"
+                >
+                  {savingKey === key ? "Saving…" : "Save"}
+                </button>
+                {isSet(key) && (
+                  <button
+                    onClick={() => handleDeleteSecret(key)}
+                    className="px-3 py-1.5 border border-border text-xs font-mono hover:bg-destructive hover:text-destructive-foreground"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
 
         <div className="space-y-2 pt-2">
           <button
