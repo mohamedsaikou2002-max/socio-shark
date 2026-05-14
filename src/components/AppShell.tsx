@@ -4,6 +4,7 @@ import { SharkLogo } from "./SharkLogo";
 const NAV = [
   { to: "/", label: "Library" },
   { to: "/products", label: "Products" },
+  { to: "/pipeline", label: "Pipeline" },
   { to: "/media-prep", label: "Media Prep" },
   { to: "/upload", label: "Upload" },
   { to: "/queue", label: "Review Queue" },

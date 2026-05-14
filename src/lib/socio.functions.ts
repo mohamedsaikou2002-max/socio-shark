@@ -5,7 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
+const ANTHROPIC_MODEL = "claude-sonnet-4-5";
 
 interface Vibe {
   name: string;
