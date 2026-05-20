@@ -213,10 +213,16 @@ function ProductsPage() {
         className="border-2 border-dashed border-border p-8 text-center"
       >
         <input ref={inputRef} type="file" multiple accept="image/*" onChange={(e) => onFiles(e.target.files)} className="hidden" id="prod-up" />
-        <label htmlFor="prod-up" className="cursor-pointer inline-block px-4 py-2 bg-foreground text-background text-sm font-mono">
-          {uploading ? `Uploading ${uploading}…` : "Upload product images"}
-        </label>
-        <p className="text-xs font-mono text-muted-foreground mt-3">or drag & drop · clean shots on simple backgrounds work best</p>
+        <input type="file" accept=".zip,application/zip" onChange={(e) => onZip(e.target.files?.[0] ?? null)} className="hidden" id="prod-zip" />
+        <div className="flex gap-2 justify-center flex-wrap">
+          <label htmlFor="prod-up" className="cursor-pointer inline-block px-4 py-2 bg-foreground text-background text-sm font-mono">
+            {uploading ? `Uploading ${uploading}…` : "Upload images"}
+          </label>
+          <label htmlFor="prod-zip" className="cursor-pointer inline-block px-4 py-2 border border-border text-sm font-mono hover:bg-foreground hover:text-background">
+            Import ZIP
+          </label>
+        </div>
+        <p className="text-xs font-mono text-muted-foreground mt-3">or drag & drop · JPG/PNG/WEBP · ZIP imports all images at root</p>
       </div>
 
       {/* Generation controls */}
