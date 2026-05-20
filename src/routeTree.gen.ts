@@ -15,6 +15,7 @@ import { Route as ScheduledRouteImport } from './routes/scheduled'
 import { Route as QueueRouteImport } from './routes/queue'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PostedRouteImport } from './routes/posted'
+import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as MediaPrepRouteImport } from './routes/media-prep'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
@@ -50,6 +51,11 @@ const PostedRoute = PostedRouteImport.update({
   path: '/posted',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MediaPrepRoute = MediaPrepRouteImport.update({
   id: '/media-prep',
   path: '/media-prep',
@@ -74,6 +80,7 @@ const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/media-prep': typeof MediaPrepRoute
+  '/pipeline': typeof PipelineRoute
   '/posted': typeof PostedRoute
   '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/media-prep': typeof MediaPrepRoute
+  '/pipeline': typeof PipelineRoute
   '/posted': typeof PostedRoute
   '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/media-prep': typeof MediaPrepRoute
+  '/pipeline': typeof PipelineRoute
   '/posted': typeof PostedRoute
   '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/media-prep'
+    | '/pipeline'
     | '/posted'
     | '/products'
     | '/queue'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/media-prep'
+    | '/pipeline'
     | '/posted'
     | '/products'
     | '/queue'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/media-prep'
+    | '/pipeline'
     | '/posted'
     | '/products'
     | '/queue'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MediaPrepRoute: typeof MediaPrepRoute
+  PipelineRoute: typeof PipelineRoute
   PostedRoute: typeof PostedRoute
   ProductsRoute: typeof ProductsRoute
   QueueRoute: typeof QueueRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/media-prep': {
       id: '/media-prep'
       path: '/media-prep'
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MediaPrepRoute: MediaPrepRoute,
+  PipelineRoute: PipelineRoute,
   PostedRoute: PostedRoute,
   ProductsRoute: ProductsRoute,
   QueueRoute: QueueRoute,
@@ -250,3 +271,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
