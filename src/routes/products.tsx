@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect, useRef } from "react";
+import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
 import { Vibe } from "@/lib/socio-shared";
 import { startKlingGeneration, pollKlingPost } from "@/lib/kling.functions";
