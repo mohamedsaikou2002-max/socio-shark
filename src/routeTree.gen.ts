@@ -19,6 +19,7 @@ import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as MediaPrepRouteImport } from './routes/media-prep'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as ApiPublicHooksRunPipelineRouteImport } from './routes/api/public/hooks/run-pipeline'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
 const UploadRoute = UploadRouteImport.update({
@@ -71,6 +72,12 @@ const PostIdRoute = PostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRunPipelineRoute =
+  ApiPublicHooksRunPipelineRouteImport.update({
+    id: '/api/public/hooks/run-pipeline',
+    path: '/api/public/hooks/run-pipeline',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
   id: '/api/public/hooks/run-due',
   path: '/api/public/hooks/run-due',
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
+  '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesByTo {
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
+  '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +125,7 @@ export interface FileRoutesById {
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
+  '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/post/$id'
     | '/api/public/hooks/run-due'
+    | '/api/public/hooks/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/post/$id'
     | '/api/public/hooks/run-due'
+    | '/api/public/hooks/run-pipeline'
   id:
     | '__root__'
     | '/'
@@ -157,6 +169,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/post/$id'
     | '/api/public/hooks/run-due'
+    | '/api/public/hooks/run-pipeline'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +184,7 @@ export interface RootRouteChildren {
   UploadRoute: typeof UploadRoute
   PostIdRoute: typeof PostIdRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
+  ApiPublicHooksRunPipelineRoute: typeof ApiPublicHooksRunPipelineRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -245,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/run-pipeline': {
+      id: '/api/public/hooks/run-pipeline'
+      path: '/api/public/hooks/run-pipeline'
+      fullPath: '/api/public/hooks/run-pipeline'
+      preLoaderRoute: typeof ApiPublicHooksRunPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-due': {
       id: '/api/public/hooks/run-due'
       path: '/api/public/hooks/run-due'
@@ -267,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   UploadRoute: UploadRoute,
   PostIdRoute: PostIdRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
+  ApiPublicHooksRunPipelineRoute: ApiPublicHooksRunPipelineRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
