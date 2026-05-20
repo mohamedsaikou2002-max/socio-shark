@@ -244,9 +244,9 @@ function PipelinePage() {
                 {lastResult.klingTaskId ? `Generating — task ${String(lastResult.klingTaskId).slice(0, 12)}…` : lastResult.klingError ? String(lastResult.klingError) : String(lastResult.status)}
               </span>
             </p>
-            {lastResult.postId && (
+            {lastResult.postId ? (
               <Link to="/queue" className="underline text-foreground">View in queue →</Link>
-            )}
+            ) : null}
           </div>
         </div>
       )}

@@ -121,10 +121,12 @@ export const runContentPipeline = createServerFn({ method: "POST" })
         const picked = prompts[Math.floor(Math.random() * prompts.length)];
         prompt = picked.prompt;
         // Increment use_count
+        const { data: row } = await supabaseAdmin
+          .from("saved_prompts").select("use_count").eq("id", picked.id).single();
         await supabaseAdmin
           .from("saved_prompts")
           .update({
-            use_count: supabaseAdmin.rpc as never, // handled below
+            use_count: (row?.use_count ?? 0) + 1,
             last_used_at: new Date().toISOString(),
           })
           .eq("id", picked.id);

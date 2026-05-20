@@ -15,9 +15,11 @@ import { Route as ScheduledRouteImport } from './routes/scheduled'
 import { Route as QueueRouteImport } from './routes/queue'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PostedRouteImport } from './routes/posted'
+import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as MediaPrepRouteImport } from './routes/media-prep'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as ApiPublicHooksRunPipelineRouteImport } from './routes/api/public/hooks/run-pipeline'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
 const UploadRoute = UploadRouteImport.update({
@@ -50,6 +52,11 @@ const PostedRoute = PostedRouteImport.update({
   path: '/posted',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MediaPrepRoute = MediaPrepRouteImport.update({
   id: '/media-prep',
   path: '/media-prep',
@@ -65,6 +72,12 @@ const PostIdRoute = PostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRunPipelineRoute =
+  ApiPublicHooksRunPipelineRouteImport.update({
+    id: '/api/public/hooks/run-pipeline',
+    path: '/api/public/hooks/run-pipeline',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
   id: '/api/public/hooks/run-due',
   path: '/api/public/hooks/run-due',
@@ -74,6 +87,7 @@ const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/media-prep': typeof MediaPrepRoute
+  '/pipeline': typeof PipelineRoute
   '/posted': typeof PostedRoute
   '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
@@ -82,10 +96,12 @@ export interface FileRoutesByFullPath {
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
+  '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/media-prep': typeof MediaPrepRoute
+  '/pipeline': typeof PipelineRoute
   '/posted': typeof PostedRoute
   '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
@@ -94,11 +110,13 @@ export interface FileRoutesByTo {
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
+  '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/media-prep': typeof MediaPrepRoute
+  '/pipeline': typeof PipelineRoute
   '/posted': typeof PostedRoute
   '/products': typeof ProductsRoute
   '/queue': typeof QueueRoute
@@ -107,12 +125,14 @@ export interface FileRoutesById {
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
+  '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/media-prep'
+    | '/pipeline'
     | '/posted'
     | '/products'
     | '/queue'
@@ -121,10 +141,12 @@ export interface FileRouteTypes {
     | '/upload'
     | '/post/$id'
     | '/api/public/hooks/run-due'
+    | '/api/public/hooks/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/media-prep'
+    | '/pipeline'
     | '/posted'
     | '/products'
     | '/queue'
@@ -133,10 +155,12 @@ export interface FileRouteTypes {
     | '/upload'
     | '/post/$id'
     | '/api/public/hooks/run-due'
+    | '/api/public/hooks/run-pipeline'
   id:
     | '__root__'
     | '/'
     | '/media-prep'
+    | '/pipeline'
     | '/posted'
     | '/products'
     | '/queue'
@@ -145,11 +169,13 @@ export interface FileRouteTypes {
     | '/upload'
     | '/post/$id'
     | '/api/public/hooks/run-due'
+    | '/api/public/hooks/run-pipeline'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MediaPrepRoute: typeof MediaPrepRoute
+  PipelineRoute: typeof PipelineRoute
   PostedRoute: typeof PostedRoute
   ProductsRoute: typeof ProductsRoute
   QueueRoute: typeof QueueRoute
@@ -158,6 +184,7 @@ export interface RootRouteChildren {
   UploadRoute: typeof UploadRoute
   PostIdRoute: typeof PostIdRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
+  ApiPublicHooksRunPipelineRoute: typeof ApiPublicHooksRunPipelineRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -204,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/media-prep': {
       id: '/media-prep'
       path: '/media-prep'
@@ -225,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/run-pipeline': {
+      id: '/api/public/hooks/run-pipeline'
+      path: '/api/public/hooks/run-pipeline'
+      fullPath: '/api/public/hooks/run-pipeline'
+      preLoaderRoute: typeof ApiPublicHooksRunPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-due': {
       id: '/api/public/hooks/run-due'
       path: '/api/public/hooks/run-due'
@@ -238,6 +279,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MediaPrepRoute: MediaPrepRoute,
+  PipelineRoute: PipelineRoute,
   PostedRoute: PostedRoute,
   ProductsRoute: ProductsRoute,
   QueueRoute: QueueRoute,
@@ -246,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   UploadRoute: UploadRoute,
   PostIdRoute: PostIdRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
+  ApiPublicHooksRunPipelineRoute: ApiPublicHooksRunPipelineRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
