@@ -143,6 +143,33 @@ function ProductsPage() {
     toast.success(`Uploaded ${done} image${done === 1 ? "" : "s"}`);
   }
 
+  async function onZip(file: File | null) {
+    if (!file) return;
+    if (!/\.zip$/i.test(file.name)) { toast.error("Pick a .zip file"); return; }
+    toast.info("Extracting ZIP…");
+    const zip = await JSZip.loadAsync(file);
+    const entries = Object.values(zip.files).filter(
+      (f) => !f.dir && /\.(jpe?g|png|webp)$/i.test(f.name),
+    );
+    if (!entries.length) { toast.error("No images found in ZIP"); return; }
+    setUploading(entries.length);
+    let done = 0;
+    for (const entry of entries) {
+      const blob = await entry.async("blob");
+      const ext = entry.name.split(".").pop()!.toLowerCase();
+      const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+      const path = `${crypto.randomUUID()}.${ext}`;
+      const up = await supabase.storage.from("product-images").upload(path, blob, { contentType: mime });
+      if (up.error) { console.error(up.error); continue; }
+      await supabase.from("products").insert({ image_path: path, name: entry.name.split("/").pop() ?? entry.name });
+      done++;
+      setUploading(entries.length - done);
+    }
+    setUploading(0);
+    qc.invalidateQueries({ queryKey: ["products"] });
+    toast.success(`Imported ${done} image${done === 1 ? "" : "s"} from ZIP`);
+  }
+
   async function generate(p: Product) {
     setBusy(p.id);
     try {
