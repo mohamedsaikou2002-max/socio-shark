@@ -221,7 +221,7 @@ function Settings() {
             disabled={testing}
             className="px-4 py-2 bg-foreground text-background text-sm font-mono disabled:opacity-40"
           >
-            {testing ? "Testing…" : "Test Kling API"}
+            {testing ? "Testing…" : "Test Keys"}
           </button>
           {klingResult && (
             <div className={`border p-3 text-xs font-mono space-y-1 ${klingResult.ok ? "border-foreground" : "border-destructive"}`}>
