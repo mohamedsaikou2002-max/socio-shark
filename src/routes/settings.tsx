@@ -34,7 +34,6 @@ function Settings() {
 
   const SECRET_KEYS = [
     { key: "META_ACCESS_TOKEN", label: "Meta Access Token", hint: "Meta Graph API (Instagram Reels)" },
-    { key: "META_ACCESS_TOKEN", label: "Meta Access Token", hint: "Meta Graph API (Instagram Reels)" },
     { key: "INSTAGRAM_ACCOUNT_ID", label: "Instagram Account ID", hint: "your IG Professional account id" },
     { key: "TIKTOK_ACCESS_TOKEN", label: "TikTok Access Token", hint: "TikTok Content Posting API" },
   ];
