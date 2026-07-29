@@ -33,9 +33,6 @@ function Settings() {
   const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const SECRET_KEYS = [
-    { key: "KLING_ACCESS_KEY", label: "Kling Access Key", hint: "klingai.com → API" },
-    { key: "KLING_SECRET_KEY", label: "Kling Secret Key", hint: "pairs with access key for JWT auth" },
-    { key: "ANTHROPIC_API_KEY", label: "Anthropic API Key", hint: "console.anthropic.com → API Keys" },
     { key: "META_ACCESS_TOKEN", label: "Meta Access Token", hint: "Meta Graph API (Instagram Reels)" },
     { key: "INSTAGRAM_ACCOUNT_ID", label: "Instagram Account ID", hint: "your IG Professional account id" },
     { key: "TIKTOK_ACCESS_TOKEN", label: "TikTok Access Token", hint: "TikTok Content Posting API" },
