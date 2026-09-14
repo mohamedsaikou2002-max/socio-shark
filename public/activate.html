@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SocioShark Activation</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 360px; margin: 10vh auto; padding: 0 24px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.sub { color: #666; font-size: 14px; margin-top: 0; }
+  input { width: 100%; box-sizing: border-box; padding: 10px 12px; margin-top: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+  input#code { text-align: center; letter-spacing: 6px; font-size: 18px; }
+  button { width: 100%; margin-top: 16px; padding: 10px; border: none; border-radius: 6px; background: #111; color: #fff; font-size: 14px; cursor: pointer; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  #message { margin-top: 12px; font-size: 13px; color: #c0392b; min-height: 1em; }
+</style>
+</head>
+<body>
+  <h1>Activate SocioShark</h1>
+  <p class="sub">Enter your checkout session ID and the 6-digit code from your receipt.</p>
+
+  <form id="activate-form">
+    <input type="text" id="session_id" placeholder="Checkout session ID" required />
+    <input type="text" id="code" placeholder="6-digit code" inputmode="numeric" maxlength="6" required />
+    <button type="submit" id="submit-btn">Activate</button>
+    <div id="message"></div>
+  </form>
+
+  <script>
+    // Points at the same worker route as the React app. Adjust API_BASE if
+    // this fallback page is hosted separately from the main app.
+    const API_BASE = "";
+
+    document.getElementById("activate-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const button = document.getElementById("submit-btn");
+      const message = document.getElementById("message");
+      const session_id = document.getElementById("session_id").value.trim();
+      const code = document.getElementById("code").value.trim();
+
+      button.disabled = true;
+      message.textContent = "";
+
+      try {
+        const res = await fetch(API_BASE + "/api/activate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id, code }),
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.ok) {
+          message.textContent = data.error === "session_not_paid"
+            ? "Payment not confirmed for this session yet."
+            : data.error === "invalid_code"
+            ? "Code doesn't match — check and try again."
+            : "Activation failed.";
+          button.disabled = false;
+          return;
+        }
+
+        localStorage.setItem("socio_license_token", data.license_token);
+        window.location.href = "/dashboard";
+      } catch (err) {
+        message.textContent = "Network error — please try again.";
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
