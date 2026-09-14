@@ -20,6 +20,8 @@ import { Route as MediaPrepRouteImport } from './routes/media-prep'
 import { Route as ActivateRouteImport } from './routes/activate'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as ApiPublicLicenseStatusRouteImport } from './routes/api/public/license-status'
+import { Route as ApiPublicActivateRouteImport } from './routes/api/public/activate'
 import { Route as ApiPublicHooksRunPipelineRouteImport } from './routes/api/public/hooks/run-pipeline'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
@@ -78,6 +80,16 @@ const PostIdRoute = PostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLicenseStatusRoute = ApiPublicLicenseStatusRouteImport.update({
+  id: '/api/public/license-status',
+  path: '/api/public/license-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicActivateRoute = ApiPublicActivateRouteImport.update({
+  id: '/api/public/activate',
+  path: '/api/public/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksRunPipelineRoute =
   ApiPublicHooksRunPipelineRouteImport.update({
     id: '/api/public/hooks/run-pipeline',
@@ -102,6 +114,8 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
+  '/api/public/activate': typeof ApiPublicActivateRoute
+  '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
@@ -117,6 +131,8 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
+  '/api/public/activate': typeof ApiPublicActivateRoute
+  '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
@@ -133,6 +149,8 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/upload': typeof UploadRoute
   '/post/$id': typeof PostIdRoute
+  '/api/public/activate': typeof ApiPublicActivateRoute
+  '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
@@ -150,6 +168,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/upload'
     | '/post/$id'
+    | '/api/public/activate'
+    | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
@@ -165,6 +185,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/upload'
     | '/post/$id'
+    | '/api/public/activate'
+    | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
   id:
@@ -180,6 +202,8 @@ export interface FileRouteTypes {
     | '/settings'
     | '/upload'
     | '/post/$id'
+    | '/api/public/activate'
+    | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
   fileRoutesById: FileRoutesById
@@ -196,6 +220,8 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   UploadRoute: typeof UploadRoute
   PostIdRoute: typeof PostIdRoute
+  ApiPublicActivateRoute: typeof ApiPublicActivateRoute
+  ApiPublicLicenseStatusRoute: typeof ApiPublicLicenseStatusRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
   ApiPublicHooksRunPipelineRoute: typeof ApiPublicHooksRunPipelineRoute
 }
@@ -279,6 +305,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/license-status': {
+      id: '/api/public/license-status'
+      path: '/api/public/license-status'
+      fullPath: '/api/public/license-status'
+      preLoaderRoute: typeof ApiPublicLicenseStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/activate': {
+      id: '/api/public/activate'
+      path: '/api/public/activate'
+      fullPath: '/api/public/activate'
+      preLoaderRoute: typeof ApiPublicActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-pipeline': {
       id: '/api/public/hooks/run-pipeline'
       path: '/api/public/hooks/run-pipeline'
@@ -308,6 +348,8 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   UploadRoute: UploadRoute,
   PostIdRoute: PostIdRoute,
+  ApiPublicActivateRoute: ApiPublicActivateRoute,
+  ApiPublicLicenseStatusRoute: ApiPublicLicenseStatusRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
   ApiPublicHooksRunPipelineRoute: ApiPublicHooksRunPipelineRoute,
 }
