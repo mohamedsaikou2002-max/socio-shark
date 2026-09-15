@@ -9,75 +9,70 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as UploadRouteImport } from './routes/upload'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as ScheduledRouteImport } from './routes/scheduled'
-import { Route as QueueRouteImport } from './routes/queue'
-import { Route as ProductsRouteImport } from './routes/products'
-import { Route as PostedRouteImport } from './routes/posted'
-import { Route as PipelineRouteImport } from './routes/pipeline'
-import { Route as MediaPrepRouteImport } from './routes/media-prep'
 import { Route as ActivateRouteImport } from './routes/activate'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
+import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
+import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
+import { Route as AuthenticatedPostedRouteImport } from './routes/_authenticated/posted'
+import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
+import { Route as AuthenticatedMediaPrepRouteImport } from './routes/_authenticated/media-prep'
 import { Route as ApiPublicLicenseStatusRouteImport } from './routes/api/public/license-status'
 import { Route as ApiPublicActivateRouteImport } from './routes/api/public/activate'
+import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
 import { Route as ApiPublicHooksRunPipelineRouteImport } from './routes/api/public/hooks/run-pipeline'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
-const UploadRoute = UploadRouteImport.update({
-  id: '/upload',
-  path: '/upload',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScheduledRoute = ScheduledRouteImport.update({
-  id: '/scheduled',
-  path: '/scheduled',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QueueRoute = QueueRouteImport.update({
-  id: '/queue',
-  path: '/queue',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductsRoute = ProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PostedRoute = PostedRouteImport.update({
-  id: '/posted',
-  path: '/posted',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PipelineRoute = PipelineRouteImport.update({
-  id: '/pipeline',
-  path: '/pipeline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MediaPrepRoute = MediaPrepRouteImport.update({
-  id: '/media-prep',
-  path: '/media-prep',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ActivateRoute = ActivateRouteImport.update({
   id: '/activate',
   path: '/activate',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/_authenticated/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PostIdRoute = PostIdRouteImport.update({
-  id: '/post/$id',
-  path: '/post/$id',
+const AuthenticatedUploadRoute = AuthenticatedUploadRouteImport.update({
+  id: '/_authenticated/upload',
+  path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/_authenticated/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedScheduledRoute = AuthenticatedScheduledRouteImport.update({
+  id: '/_authenticated/scheduled',
+  path: '/scheduled',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedQueueRoute = AuthenticatedQueueRouteImport.update({
+  id: '/_authenticated/queue',
+  path: '/queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
+  id: '/_authenticated/products',
+  path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedPostedRoute = AuthenticatedPostedRouteImport.update({
+  id: '/_authenticated/posted',
+  path: '/posted',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedPipelineRoute = AuthenticatedPipelineRouteImport.update({
+  id: '/_authenticated/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedMediaPrepRoute = AuthenticatedMediaPrepRouteImport.update({
+  id: '/_authenticated/media-prep',
+  path: '/media-prep',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicLicenseStatusRoute = ApiPublicLicenseStatusRouteImport.update({
@@ -88,6 +83,11 @@ const ApiPublicLicenseStatusRoute = ApiPublicLicenseStatusRouteImport.update({
 const ApiPublicActivateRoute = ApiPublicActivateRouteImport.update({
   id: '/api/public/activate',
   path: '/api/public/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
+  id: '/_authenticated/post/$id',
+  path: '/post/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksRunPipelineRoute =
@@ -103,34 +103,34 @@ const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
-  '/media-prep': typeof MediaPrepRoute
-  '/pipeline': typeof PipelineRoute
-  '/posted': typeof PostedRoute
-  '/products': typeof ProductsRoute
-  '/queue': typeof QueueRoute
-  '/scheduled': typeof ScheduledRoute
-  '/settings': typeof SettingsRoute
-  '/upload': typeof UploadRoute
-  '/post/$id': typeof PostIdRoute
+  '/media-prep': typeof AuthenticatedMediaPrepRoute
+  '/pipeline': typeof AuthenticatedPipelineRoute
+  '/posted': typeof AuthenticatedPostedRoute
+  '/products': typeof AuthenticatedProductsRoute
+  '/queue': typeof AuthenticatedQueueRoute
+  '/scheduled': typeof AuthenticatedScheduledRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/upload': typeof AuthenticatedUploadRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/post/$id': typeof AuthenticatedPostIdRoute
   '/api/public/activate': typeof ApiPublicActivateRoute
   '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
-  '/media-prep': typeof MediaPrepRoute
-  '/pipeline': typeof PipelineRoute
-  '/posted': typeof PostedRoute
-  '/products': typeof ProductsRoute
-  '/queue': typeof QueueRoute
-  '/scheduled': typeof ScheduledRoute
-  '/settings': typeof SettingsRoute
-  '/upload': typeof UploadRoute
-  '/post/$id': typeof PostIdRoute
+  '/media-prep': typeof AuthenticatedMediaPrepRoute
+  '/pipeline': typeof AuthenticatedPipelineRoute
+  '/posted': typeof AuthenticatedPostedRoute
+  '/products': typeof AuthenticatedProductsRoute
+  '/queue': typeof AuthenticatedQueueRoute
+  '/scheduled': typeof AuthenticatedScheduledRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/upload': typeof AuthenticatedUploadRoute
+  '/': typeof AuthenticatedIndexRoute
+  '/post/$id': typeof AuthenticatedPostIdRoute
   '/api/public/activate': typeof ApiPublicActivateRoute
   '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
@@ -138,17 +138,17 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/activate': typeof ActivateRoute
-  '/media-prep': typeof MediaPrepRoute
-  '/pipeline': typeof PipelineRoute
-  '/posted': typeof PostedRoute
-  '/products': typeof ProductsRoute
-  '/queue': typeof QueueRoute
-  '/scheduled': typeof ScheduledRoute
-  '/settings': typeof SettingsRoute
-  '/upload': typeof UploadRoute
-  '/post/$id': typeof PostIdRoute
+  '/_authenticated/media-prep': typeof AuthenticatedMediaPrepRoute
+  '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
+  '/_authenticated/posted': typeof AuthenticatedPostedRoute
+  '/_authenticated/products': typeof AuthenticatedProductsRoute
+  '/_authenticated/queue': typeof AuthenticatedQueueRoute
+  '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/upload': typeof AuthenticatedUploadRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
   '/api/public/activate': typeof ApiPublicActivateRoute
   '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
@@ -157,7 +157,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/activate'
     | '/media-prep'
     | '/pipeline'
@@ -167,6 +166,7 @@ export interface FileRouteTypes {
     | '/scheduled'
     | '/settings'
     | '/upload'
+    | '/'
     | '/post/$id'
     | '/api/public/activate'
     | '/api/public/license-status'
@@ -174,7 +174,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/activate'
     | '/media-prep'
     | '/pipeline'
@@ -184,6 +183,7 @@ export interface FileRouteTypes {
     | '/scheduled'
     | '/settings'
     | '/upload'
+    | '/'
     | '/post/$id'
     | '/api/public/activate'
     | '/api/public/license-status'
@@ -191,17 +191,17 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-pipeline'
   id:
     | '__root__'
-    | '/'
     | '/activate'
-    | '/media-prep'
-    | '/pipeline'
-    | '/posted'
-    | '/products'
-    | '/queue'
-    | '/scheduled'
-    | '/settings'
-    | '/upload'
-    | '/post/$id'
+    | '/_authenticated/media-prep'
+    | '/_authenticated/pipeline'
+    | '/_authenticated/posted'
+    | '/_authenticated/products'
+    | '/_authenticated/queue'
+    | '/_authenticated/scheduled'
+    | '/_authenticated/settings'
+    | '/_authenticated/upload'
+    | '/_authenticated/'
+    | '/_authenticated/post/$id'
     | '/api/public/activate'
     | '/api/public/license-status'
     | '/api/public/hooks/run-due'
@@ -209,17 +209,17 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   ActivateRoute: typeof ActivateRoute
-  MediaPrepRoute: typeof MediaPrepRoute
-  PipelineRoute: typeof PipelineRoute
-  PostedRoute: typeof PostedRoute
-  ProductsRoute: typeof ProductsRoute
-  QueueRoute: typeof QueueRoute
-  ScheduledRoute: typeof ScheduledRoute
-  SettingsRoute: typeof SettingsRoute
-  UploadRoute: typeof UploadRoute
-  PostIdRoute: typeof PostIdRoute
+  AuthenticatedMediaPrepRoute: typeof AuthenticatedMediaPrepRoute
+  AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
+  AuthenticatedPostedRoute: typeof AuthenticatedPostedRoute
+  AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
+  AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
+  AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedPostIdRoute: typeof AuthenticatedPostIdRoute
   ApiPublicActivateRoute: typeof ApiPublicActivateRoute
   ApiPublicLicenseStatusRoute: typeof ApiPublicLicenseStatusRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
@@ -228,62 +228,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/upload': {
-      id: '/upload'
-      path: '/upload'
-      fullPath: '/upload'
-      preLoaderRoute: typeof UploadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scheduled': {
-      id: '/scheduled'
-      path: '/scheduled'
-      fullPath: '/scheduled'
-      preLoaderRoute: typeof ScheduledRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/queue': {
-      id: '/queue'
-      path: '/queue'
-      fullPath: '/queue'
-      preLoaderRoute: typeof QueueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products': {
-      id: '/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof ProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/posted': {
-      id: '/posted'
-      path: '/posted'
-      fullPath: '/posted'
-      preLoaderRoute: typeof PostedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pipeline': {
-      id: '/pipeline'
-      path: '/pipeline'
-      fullPath: '/pipeline'
-      preLoaderRoute: typeof PipelineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/media-prep': {
-      id: '/media-prep'
-      path: '/media-prep'
-      fullPath: '/media-prep'
-      preLoaderRoute: typeof MediaPrepRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/activate': {
       id: '/activate'
       path: '/activate'
@@ -291,18 +235,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ActivateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/post/$id': {
-      id: '/post/$id'
-      path: '/post/$id'
-      fullPath: '/post/$id'
-      preLoaderRoute: typeof PostIdRouteImport
+    '/_authenticated/upload': {
+      id: '/_authenticated/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof AuthenticatedUploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/scheduled': {
+      id: '/_authenticated/scheduled'
+      path: '/scheduled'
+      fullPath: '/scheduled'
+      preLoaderRoute: typeof AuthenticatedScheduledRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/queue': {
+      id: '/_authenticated/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof AuthenticatedQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/products': {
+      id: '/_authenticated/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AuthenticatedProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/posted': {
+      id: '/_authenticated/posted'
+      path: '/posted'
+      fullPath: '/posted'
+      preLoaderRoute: typeof AuthenticatedPostedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/pipeline': {
+      id: '/_authenticated/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof AuthenticatedPipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/media-prep': {
+      id: '/_authenticated/media-prep'
+      path: '/media-prep'
+      fullPath: '/media-prep'
+      preLoaderRoute: typeof AuthenticatedMediaPrepRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/license-status': {
@@ -317,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/activate'
       fullPath: '/api/public/activate'
       preLoaderRoute: typeof ApiPublicActivateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/post/$id': {
+      id: '/_authenticated/post/$id'
+      path: '/post/$id'
+      fullPath: '/post/$id'
+      preLoaderRoute: typeof AuthenticatedPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/run-pipeline': {
@@ -337,17 +337,17 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   ActivateRoute: ActivateRoute,
-  MediaPrepRoute: MediaPrepRoute,
-  PipelineRoute: PipelineRoute,
-  PostedRoute: PostedRoute,
-  ProductsRoute: ProductsRoute,
-  QueueRoute: QueueRoute,
-  ScheduledRoute: ScheduledRoute,
-  SettingsRoute: SettingsRoute,
-  UploadRoute: UploadRoute,
-  PostIdRoute: PostIdRoute,
+  AuthenticatedMediaPrepRoute: AuthenticatedMediaPrepRoute,
+  AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
+  AuthenticatedPostedRoute: AuthenticatedPostedRoute,
+  AuthenticatedProductsRoute: AuthenticatedProductsRoute,
+  AuthenticatedQueueRoute: AuthenticatedQueueRoute,
+  AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedUploadRoute: AuthenticatedUploadRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedPostIdRoute: AuthenticatedPostIdRoute,
   ApiPublicActivateRoute: ApiPublicActivateRoute,
   ApiPublicLicenseStatusRoute: ApiPublicLicenseStatusRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
