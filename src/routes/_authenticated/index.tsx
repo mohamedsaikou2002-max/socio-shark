@@ -5,7 +5,7 @@ import { Post } from "@/lib/socio-shared";
 import { PostCard } from "@/components/PostCard";
 import { SharkLogo } from "@/components/SharkLogo";
 
-export const Route = createFileRoute("/")({ component: Library });
+export const Route = createFileRoute("/_authenticated/")({ component: Library });
 
 function Library() {
   const { data: posts = [], isLoading } = useQuery({

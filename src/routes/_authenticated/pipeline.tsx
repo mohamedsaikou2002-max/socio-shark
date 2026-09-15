@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Vibe } from "@/lib/socio-shared";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/pipeline")({ component: PipelinePage });
+export const Route = createFileRoute("/_authenticated/pipeline")({ component: PipelinePage });
 
 function PipelinePage() {
   const qc = useQueryClient();
