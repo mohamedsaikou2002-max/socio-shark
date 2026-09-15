@@ -24,6 +24,7 @@ import { Route as AuthenticatedMediaPrepRouteImport } from './routes/_authentica
 import { Route as ApiPublicLicenseStatusRouteImport } from './routes/api/public/license-status'
 import { Route as ApiPublicActivateRouteImport } from './routes/api/public/activate'
 import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
+import { Route as ApiPublicHooksStripeRouteImport } from './routes/api/public/hooks/stripe'
 import { Route as ApiPublicHooksRunPipelineRouteImport } from './routes/api/public/hooks/run-pipeline'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
@@ -101,6 +102,11 @@ const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksStripeRoute = ApiPublicHooksStripeRouteImport.update({
+  id: '/api/public/hooks/stripe',
+  path: '/api/public/hooks/stripe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksRunPipelineRoute =
   ApiPublicHooksRunPipelineRouteImport.update({
     id: '/api/public/hooks/run-pipeline',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
+  '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
 }
 export interface FileRoutesByTo {
   '/activate': typeof ActivateRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
+  '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
+  '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
+    | '/api/public/hooks/stripe'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/activate'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
+    | '/api/public/hooks/stripe'
   id:
     | '__root__'
     | '/_authenticated'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
+    | '/api/public/hooks/stripe'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   ApiPublicLicenseStatusRoute: typeof ApiPublicLicenseStatusRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
   ApiPublicHooksRunPipelineRoute: typeof ApiPublicHooksRunPipelineRoute
+  ApiPublicHooksStripeRoute: typeof ApiPublicHooksStripeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -344,6 +357,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPostIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/stripe': {
+      id: '/api/public/hooks/stripe'
+      path: '/api/public/hooks/stripe'
+      fullPath: '/api/public/hooks/stripe'
+      preLoaderRoute: typeof ApiPublicHooksStripeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-pipeline': {
       id: '/api/public/hooks/run-pipeline'
       path: '/api/public/hooks/run-pipeline'
@@ -398,6 +418,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicLicenseStatusRoute: ApiPublicLicenseStatusRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
   ApiPublicHooksRunPipelineRoute: ApiPublicHooksRunPipelineRoute,
+  ApiPublicHooksStripeRoute: ApiPublicHooksStripeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
