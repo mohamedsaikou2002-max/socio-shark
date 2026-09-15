@@ -1,9 +1,8 @@
-import { useState } from "react";
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { SharkLogo } from "./SharkLogo";
 import { ThemeToggle } from "./ThemeToggle";
-import { UpgradeModal } from "./UpgradeModal";
-import { useLicenseCheck } from "@/hooks/useLicenseCheck";
+import { useAuth, useMembership, isActive, signOut } from "@/hooks/useAuth";
+import { checkoutUrl } from "@/lib/billing";
 
 const NAV = [
   { to: "/", label: "Library" },
@@ -19,8 +18,9 @@ const NAV = [
 
 export function AppShell() {
   const { pathname } = useLocation();
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const license = useLicenseCheck();
+  const { user, loading } = useAuth();
+  const { data: membership } = useMembership(user?.id);
+  const active = isActive(membership);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -30,54 +30,75 @@ export function AppShell() {
             <SharkLogo className="w-7 h-7 text-foreground" />
             <span className="font-mono tracking-tight font-bold text-base sm:text-lg">SOCIO-SHARK</span>
           </Link>
-          <nav className="hidden lg:flex items-center gap-1">
+          {user && (
+            <nav className="hidden lg:flex items-center gap-1">
+              {NAV.map((n) => {
+                const isCurrent = pathname === n.to;
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                      isCurrent
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {n.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {loading ? null : user ? (
+              <>
+                {active ? (
+                  <span className="hidden sm:inline-flex items-center border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
+                    member
+                  </span>
+                ) : (
+                  <a
+                    href={checkoutUrl(user.id, user.email)}
+                    className="bg-foreground px-3 py-1.5 font-mono text-xs text-background hover:opacity-90"
+                  >
+                    Activate $297/mo
+                  </a>
+                )}
+                <button
+                  onClick={() => signOut()}
+                  className="border border-border px-3 py-1.5 font-mono text-xs hover:bg-muted"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/auth"
+                className="bg-foreground px-3 py-1.5 font-mono text-xs text-background hover:opacity-90"
+              >
+                Sign in
+              </Link>
+            )}
+            <ThemeToggle />
+          </div>
+        </div>
+        {user && (
+          <nav className="lg:hidden flex overflow-x-auto px-4 pb-2 gap-1 border-t border-border">
             {NAV.map((n) => {
-              const active = pathname === n.to;
+              const isCurrent = pathname === n.to;
               return (
                 <Link
                   key={n.to}
                   to={n.to}
-                  className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  }`}
+                  className={`px-3 py-1 text-xs rounded-md whitespace-nowrap ${isCurrent ? "bg-foreground text-background" : "text-muted-foreground"}`}
                 >
                   {n.label}
                 </Link>
               );
             })}
           </nav>
-          <div className="flex items-center gap-2 shrink-0">
-            {license.loading ? null : license.licensed ? (
-              <span className="hidden sm:inline-flex items-center border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                {license.demo ? "demo pass" : "licensed"}
-              </span>
-            ) : (
-              <button
-                onClick={() => setUpgradeOpen(true)}
-                className="bg-foreground px-3 py-1.5 font-mono text-xs text-background hover:opacity-90"
-              >
-                Unlock
-              </button>
-            )}
-            <ThemeToggle />
-          </div>
-        </div>
-        <nav className="lg:hidden flex overflow-x-auto px-4 pb-2 gap-1 border-t border-border">
-          {NAV.map((n) => {
-            const active = pathname === n.to;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={`px-3 py-1 text-xs rounded-md whitespace-nowrap ${active ? "bg-foreground text-background" : "text-muted-foreground"}`}
-              >
-                {n.label}
-              </Link>
-            );
-          })}
-        </nav>
+        )}
       </header>
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <Outlet />
@@ -85,13 +106,10 @@ export function AppShell() {
       <footer className="border-t border-border mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-xs font-mono text-muted-foreground flex flex-wrap gap-2 justify-between">
           <span>SOCIO-SHARK // v1</span>
-          <Link to="/activate" className="hover:text-foreground">
-            activate
-          </Link>
+          <span>$297/mo membership</span>
           <span>autonomous social ops</span>
         </div>
       </footer>
-      <UpgradeModal open={upgradeOpen} onOpenChange={setUpgradeOpen} />
     </div>
   );
 }
