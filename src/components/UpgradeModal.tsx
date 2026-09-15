@@ -37,8 +37,9 @@ export function UpgradeModal({
             <DialogTitle className="font-mono tracking-tight">Unlock Socio-Shark</DialogTitle>
           </div>
           <DialogDescription>
-            One payment unlocks the full autonomous pipeline. After checkout you get a 6-digit
-            activation code.
+            <span className="block font-mono text-2xl text-foreground">$297<span className="text-sm text-muted-foreground">/month</span></span>
+            Monthly subscription for the full autonomous pipeline. Cancel anytime. After checkout
+            you get a 6-digit activation code.
           </DialogDescription>
         </DialogHeader>
 
@@ -64,7 +65,7 @@ export function UpgradeModal({
               hasLink ? "hover:opacity-90" : "cursor-not-allowed opacity-50"
             }`}
           >
-            Continue to checkout <ExternalLink className="h-4 w-4" />
+            Subscribe — $297/mo <ExternalLink className="h-4 w-4" />
           </a>
           {!hasLink && (
             <p className="w-full text-center text-xs text-muted-foreground">
