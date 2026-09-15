@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Vibe } from "@/lib/socio-shared";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/upload")({ component: UploadPage });
+export const Route = createFileRoute("/_authenticated/upload")({ component: UploadPage });
 
 interface PendingFile {
   file: File;

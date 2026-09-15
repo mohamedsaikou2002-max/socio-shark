@@ -8,7 +8,7 @@ import { PostCard } from "@/components/PostCard";
 import { generateCaptions, autoSchedule } from "@/lib/socio.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/queue")({ component: QueuePage });
+export const Route = createFileRoute("/_authenticated/queue")({ component: QueuePage });
 
 function QueuePage() {
   const qc = useQueryClient();

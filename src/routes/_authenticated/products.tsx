@@ -8,7 +8,7 @@ import { Vibe } from "@/lib/socio-shared";
 import { startKlingGeneration, pollKlingPost } from "@/lib/kling.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/products")({ component: ProductsPage });
+export const Route = createFileRoute("/_authenticated/products")({ component: ProductsPage });
 
 interface Product {
   id: string;

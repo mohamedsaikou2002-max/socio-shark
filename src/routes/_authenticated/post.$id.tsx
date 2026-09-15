@@ -7,7 +7,7 @@ import { Post, Vibe, fmtDate, videoUrl, STATUS_LABEL } from "@/lib/socio-shared"
 import { postNow, generateCaptions } from "@/lib/socio.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/post/$id")({ component: PostDetail });
+export const Route = createFileRoute("/_authenticated/post/$id")({ component: PostDetail });
 
 function PostDetail() {
   const { id } = Route.useParams();

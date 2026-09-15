@@ -8,7 +8,7 @@ import { testKlingAuth } from "@/lib/kling.functions";
 import { saveSecret, listSecretKeys, deleteSecret } from "@/lib/secrets.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/settings")({ component: Settings });
+export const Route = createFileRoute("/_authenticated/settings")({ component: Settings });
 
 interface Slot { id: string; hour: number; minute: number; enabled: boolean; platforms: string[] }
 
