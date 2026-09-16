@@ -70,6 +70,12 @@ function MemberGate() {
         >
           I already paid — refresh status
         </button>
+        <a
+          href="/activate"
+          className="block w-full border border-border px-4 py-2 text-center font-mono text-xs hover:bg-muted"
+        >
+          I have a 7-digit access code
+        </a>
       </div>
       <button
         onClick={() => signOut()}
