@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as CodesRouteImport } from './routes/codes'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ActivateRouteImport } from './routes/activate'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -21,13 +22,16 @@ import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPostedRouteImport } from './routes/_authenticated/posted'
 import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
 import { Route as AuthenticatedMediaPrepRouteImport } from './routes/_authenticated/media-prep'
-import { Route as ApiPublicLicenseStatusRouteImport } from './routes/api/public/license-status'
-import { Route as ApiPublicActivateRouteImport } from './routes/api/public/activate'
 import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
 import { Route as ApiPublicHooksStripeRouteImport } from './routes/api/public/hooks/stripe'
 import { Route as ApiPublicHooksRunPipelineRouteImport } from './routes/api/public/hooks/run-pipeline'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
 
+const CodesRoute = CodesRouteImport.update({
+  id: '/codes',
+  path: '/codes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -87,16 +91,6 @@ const AuthenticatedMediaPrepRoute = AuthenticatedMediaPrepRouteImport.update({
   path: '/media-prep',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const ApiPublicLicenseStatusRoute = ApiPublicLicenseStatusRouteImport.update({
-  id: '/api/public/license-status',
-  path: '/api/public/license-status',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicActivateRoute = ApiPublicActivateRouteImport.update({
-  id: '/api/public/activate',
-  path: '/api/public/activate',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
   id: '/post/$id',
   path: '/post/$id',
@@ -123,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
+  '/codes': typeof CodesRoute
   '/media-prep': typeof AuthenticatedMediaPrepRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/posted': typeof AuthenticatedPostedRoute
@@ -132,8 +127,6 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/upload': typeof AuthenticatedUploadRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
-  '/api/public/activate': typeof ApiPublicActivateRoute
-  '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
   '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
@@ -141,6 +134,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
+  '/codes': typeof CodesRoute
   '/media-prep': typeof AuthenticatedMediaPrepRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/posted': typeof AuthenticatedPostedRoute
@@ -151,8 +145,6 @@ export interface FileRoutesByTo {
   '/upload': typeof AuthenticatedUploadRoute
   '/': typeof AuthenticatedIndexRoute
   '/post/$id': typeof AuthenticatedPostIdRoute
-  '/api/public/activate': typeof ApiPublicActivateRoute
-  '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
   '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
@@ -162,6 +154,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
+  '/codes': typeof CodesRoute
   '/_authenticated/media-prep': typeof AuthenticatedMediaPrepRoute
   '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
   '/_authenticated/posted': typeof AuthenticatedPostedRoute
@@ -172,8 +165,6 @@ export interface FileRoutesById {
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/post/$id': typeof AuthenticatedPostIdRoute
-  '/api/public/activate': typeof ApiPublicActivateRoute
-  '/api/public/license-status': typeof ApiPublicLicenseStatusRoute
   '/api/public/hooks/run-due': typeof ApiPublicHooksRunDueRoute
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
   '/api/public/hooks/stripe': typeof ApiPublicHooksStripeRoute
@@ -184,6 +175,7 @@ export interface FileRouteTypes {
     | '/'
     | '/activate'
     | '/auth'
+    | '/codes'
     | '/media-prep'
     | '/pipeline'
     | '/posted'
@@ -193,8 +185,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/upload'
     | '/post/$id'
-    | '/api/public/activate'
-    | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
     | '/api/public/hooks/stripe'
@@ -202,6 +192,7 @@ export interface FileRouteTypes {
   to:
     | '/activate'
     | '/auth'
+    | '/codes'
     | '/media-prep'
     | '/pipeline'
     | '/posted'
@@ -212,8 +203,6 @@ export interface FileRouteTypes {
     | '/upload'
     | '/'
     | '/post/$id'
-    | '/api/public/activate'
-    | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
     | '/api/public/hooks/stripe'
@@ -222,6 +211,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/activate'
     | '/auth'
+    | '/codes'
     | '/_authenticated/media-prep'
     | '/_authenticated/pipeline'
     | '/_authenticated/posted'
@@ -232,8 +222,6 @@ export interface FileRouteTypes {
     | '/_authenticated/upload'
     | '/_authenticated/'
     | '/_authenticated/post/$id'
-    | '/api/public/activate'
-    | '/api/public/license-status'
     | '/api/public/hooks/run-due'
     | '/api/public/hooks/run-pipeline'
     | '/api/public/hooks/stripe'
@@ -243,8 +231,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ActivateRoute: typeof ActivateRoute
   AuthRoute: typeof AuthRoute
-  ApiPublicActivateRoute: typeof ApiPublicActivateRoute
-  ApiPublicLicenseStatusRoute: typeof ApiPublicLicenseStatusRoute
+  CodesRoute: typeof CodesRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
   ApiPublicHooksRunPipelineRoute: typeof ApiPublicHooksRunPipelineRoute
   ApiPublicHooksStripeRoute: typeof ApiPublicHooksStripeRoute
@@ -252,6 +239,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/codes': {
+      id: '/codes'
+      path: '/codes'
+      fullPath: '/codes'
+      preLoaderRoute: typeof CodesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -336,20 +330,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMediaPrepRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/api/public/license-status': {
-      id: '/api/public/license-status'
-      path: '/api/public/license-status'
-      fullPath: '/api/public/license-status'
-      preLoaderRoute: typeof ApiPublicLicenseStatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/activate': {
-      id: '/api/public/activate'
-      path: '/api/public/activate'
-      fullPath: '/api/public/activate'
-      preLoaderRoute: typeof ApiPublicActivateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/post/$id': {
       id: '/_authenticated/post/$id'
       path: '/post/$id'
@@ -414,8 +394,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ActivateRoute: ActivateRoute,
   AuthRoute: AuthRoute,
-  ApiPublicActivateRoute: ApiPublicActivateRoute,
-  ApiPublicLicenseStatusRoute: ApiPublicLicenseStatusRoute,
+  CodesRoute: CodesRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
   ApiPublicHooksRunPipelineRoute: ApiPublicHooksRunPipelineRoute,
   ApiPublicHooksStripeRoute: ApiPublicHooksStripeRoute,
