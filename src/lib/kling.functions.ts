@@ -1,53 +1,9 @@
 // Kling video generation server functions
+// Auth, submission and polling live in providers/kling.ts so this flow and the
+// batch pipeline (content-pipeline.functions.ts) share one implementation.
 import { createServerFn } from "@tanstack/react-start";
-import { SignJWT } from "jose";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getSecret } from "@/lib/secrets.functions";
-
-const KLING_BASE = "https://api-singapore.klingai.com";
-
-async function klingToken() {
-  const ak = (await getSecret("KLING_ACCESS_KEY"))?.trim().replace(/^["']|["']$/g, "");
-  const sk = (await getSecret("KLING_SECRET_KEY"))?.trim().replace(/^["']|["']$/g, "");
-  if (!ak || !sk) throw new Error("KLING_ACCESS_KEY / KLING_SECRET_KEY not set — add them in Settings → API Tokens");
-  const now = Math.floor(Date.now() / 1000);
-  return await new SignJWT({ iss: ak, exp: now + 1800, nbf: now - 5 })
-    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
-    .setIssuedAt(now)
-    .sign(new TextEncoder().encode(sk));
-}
-
-// Verifies Kling AK/SK by making a minimal authenticated request and reporting the raw result.
-export const testKlingAuth = createServerFn({ method: "POST" }).handler(async () => {
-  const ak = await getSecret("KLING_ACCESS_KEY");
-  const sk = await getSecret("KLING_SECRET_KEY");
-  if (!ak || !sk) {
-    return { ok: false, status: 0, code: null, message: "KLING_ACCESS_KEY or KLING_SECRET_KEY is not set — add them in Settings → API Tokens",
-      akPreview: null, akLength: 0, skLength: 0 };
-  }
-  const akPreview = `${ak.slice(0, 4)}…${ak.slice(-4)} (len ${ak.length})`;
-  try {
-    const token = await klingToken();
-    // Hit a lightweight endpoint: list image2video tasks (auth-only, no body required)
-    const res = await fetch(`${KLING_BASE}/v1/videos/image2video?pageNum=1&pageSize=1`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const text = await res.text();
-    let body: unknown = text;
-    try { body = JSON.parse(text); } catch { /* keep as text */ }
-    const j = body as { code?: number; message?: string };
-    const ok = res.ok && j.code === 0;
-    return {
-      ok, status: res.status, code: j.code ?? null,
-      message: ok ? "Auth OK — Kling accepted the JWT" : (j.message ?? text.slice(0, 300)),
-      akPreview, akLength: ak.length, skLength: sk.length,
-    };
-  } catch (e) {
-    return { ok: false, status: 0, code: null,
-      message: e instanceof Error ? e.message : String(e),
-      akPreview, akLength: ak.length, skLength: sk.length };
-  }
-});
+import { submitImage2Video, fetchImage2VideoTask } from "@/lib/providers/kling";
 
 function publicUrl(bucket: string, path: string) {
   return supabaseAdmin.storage.from(bucket).getPublicUrl(path).data.publicUrl;
@@ -73,23 +29,12 @@ export const startKlingGeneration = createServerFn({ method: "POST" })
     const prompt = data.prompt?.trim() ||
       `${vibe?.prompt_style ?? "cinematic product showcase"}, smooth camera motion, professional lighting, high quality`;
     const imgUrl = publicUrl("product-images", product.image_path);
-    const token = await klingToken();
 
-    const res = await fetch(`${KLING_BASE}/v1/videos/image2video`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model_name: "kling-v1",
-        image: imgUrl,
-        prompt,
-        duration: String(data.duration ?? 5),
-        aspect_ratio: "9:16",
-        cfg_scale: 0.5,
-      }),
+    const { taskId } = await submitImage2Video({
+      imageUrl: imgUrl,
+      prompt,
+      duration: data.duration ?? 5,
     });
-    const j = await res.json();
-    if (!res.ok || j.code !== 0) throw new Error(`Kling: ${JSON.stringify(j)}`);
-    const taskId = j.data?.task_id as string;
 
     const { data: post, error: insErr } = await supabaseAdmin.from("posts").insert({
       vibe_id: vibe?.id ?? null,
@@ -115,18 +60,11 @@ export const pollKlingPost = createServerFn({ method: "POST" })
     if (!post?.kling_task_id) throw new Error("No task id");
     if (post.generation_status === "ready") return { status: "ready", videoPath: post.video_path };
 
-    const token = await klingToken();
-    const res = await fetch(`${KLING_BASE}/v1/videos/image2video/${post.kling_task_id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const j = await res.json();
-    if (!res.ok || j.code !== 0) throw new Error(`Kling poll: ${JSON.stringify(j)}`);
-    const status = j.data?.task_status as string;
+    const task = await fetchImage2VideoTask(post.kling_task_id);
 
-    if (status === "succeed") {
-      const videoUrl = j.data?.task_result?.videos?.[0]?.url as string;
-      if (!videoUrl) throw new Error("No video url in result");
-      const dl = await fetch(videoUrl);
+    if (task.status === "succeed") {
+      if (!task.videoUrl) throw new Error("No video url in result");
+      const dl = await fetch(task.videoUrl);
       if (!dl.ok) throw new Error(`download ${dl.status}`);
       const buf = new Uint8Array(await dl.arrayBuffer());
       const path = `kling/${post.id}.mp4`;
@@ -137,10 +75,10 @@ export const pollKlingPost = createServerFn({ method: "POST" })
       }).eq("id", post.id);
       return { status: "ready", videoPath: path };
     }
-    if (status === "failed") {
-      const msg = j.data?.task_status_msg ?? "failed";
+    if (task.status === "failed") {
+      const msg = task.message ?? "failed";
       await supabaseAdmin.from("posts").update({ generation_status: "failed", error: msg }).eq("id", post.id);
       return { status: "failed", error: msg };
     }
-    return { status }; // submitted | processing
+    return { status: task.status }; // submitted | processing
   });

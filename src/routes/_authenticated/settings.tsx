@@ -4,8 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Vibe } from "@/lib/socio-shared";
-import { testKlingAuth } from "@/lib/kling.functions";
+import { testProvider } from "@/lib/providers.functions";
 import { saveSecret, listSecretKeys, deleteSecret } from "@/lib/secrets.functions";
+import { PROVIDERS, type ProviderTestResult } from "@/lib/providers/registry";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings")({ component: Settings });
@@ -17,26 +18,18 @@ function Settings() {
   const [brief, setBrief] = useState("");
   useEffect(() => { setBrief(localStorage.getItem("socio-brief") ?? ""); }, []);
 
-  const testKling = useServerFn(testKlingAuth);
+  const testFn = useServerFn(testProvider);
   const saveFn = useServerFn(saveSecret);
   const deleteFn = useServerFn(deleteSecret);
   const listFn = useServerFn(listSecretKeys);
 
-  const [testing, setTesting] = useState(false);
-  const [klingResult, setKlingResult] = useState<null | {
-    ok: boolean; status: number; code: number | null; message: string;
-    akPreview: string | null; akLength: number; skLength: number;
-  }>(null);
+  // Per-provider verification results (from the Test button or a save)
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<Record<string, ProviderTestResult>>({});
 
   // Secret input states
   const [secretInputs, setSecretInputs] = useState<Record<string, string>>({});
   const [savingKey, setSavingKey] = useState<string | null>(null);
-
-  const SECRET_KEYS = [
-    { key: "META_ACCESS_TOKEN", label: "Meta Access Token", hint: "Meta Graph API (Instagram Reels)" },
-    { key: "INSTAGRAM_ACCOUNT_ID", label: "Instagram Account ID", hint: "your IG Professional account id" },
-    { key: "TIKTOK_ACCESS_TOKEN", label: "TikTok Access Token", hint: "TikTok Content Posting API" },
-  ];
 
   const { data: savedKeys = [] } = useQuery({
     queryKey: ["secret-keys"],
@@ -45,15 +38,25 @@ function Settings() {
 
   const isSet = (key: string) => savedKeys.some((s) => s.key === key);
 
+  const providerLabel = (providerId: string) =>
+    PROVIDERS.find((p) => p.id === providerId)?.label ?? providerId;
+
   async function handleSaveSecret(key: string) {
     const value = secretInputs[key]?.trim();
     if (!value) { toast.error("Value cannot be empty"); return; }
     setSavingKey(key);
     try {
-      await saveFn({ data: { key, value } });
+      const r = await saveFn({ data: { key, value } });
       setSecretInputs((prev) => ({ ...prev, [key]: "" }));
-      toast.success(`${key} saved`);
       qc.invalidateQueries({ queryKey: ["secret-keys"] });
+      if (r.test) {
+        // Saved + verified automatically — surface a bad paste immediately.
+        setTestResults((prev) => ({ ...prev, [r.test!.providerId]: r.test! }));
+        if (r.test.ok) toast.success(`${key} saved — verified ✓`);
+        else toast.warning(`${key} saved, but verification failed: ${r.test.message}`);
+      } else {
+        toast.success(`${key} saved`);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
     } finally { setSavingKey(null); }
@@ -70,19 +73,26 @@ function Settings() {
     }
   }
 
-  async function runKlingTest() {
-    setTesting(true);
-    setKlingResult(null);
+  async function runProviderTest(providerId: string) {
+    setTestingId(providerId);
+    setTestResults((prev) => {
+      const next = { ...prev };
+      delete next[providerId];
+      return next;
+    });
     try {
-      const r = await testKling({ data: undefined as never });
-      setKlingResult(r);
-      if (r.ok) toast.success("Kling auth OK");
-      else toast.error(`Kling auth failed (HTTP ${r.status})`);
+      const r = await testFn({ data: { providerId } });
+      setTestResults((prev) => ({ ...prev, [providerId]: r }));
+      if (r.ok) toast.success(`${providerLabel(providerId)} auth OK`);
+      else toast.error(`${providerLabel(providerId)} auth failed: ${r.message}`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      setKlingResult({ ok: false, status: 0, code: null, message: msg, akPreview: null, akLength: 0, skLength: 0 });
+      setTestResults((prev) => ({
+        ...prev,
+        [providerId]: { providerId, ok: false, status: 0, message: msg },
+      }));
       toast.error(msg);
-    } finally { setTesting(false); }
+    } finally { setTestingId(null); }
   }
 
   const { data: slots = [] } = useQuery({
@@ -174,67 +184,82 @@ function Settings() {
 
       <section className="space-y-3">
         <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground">API tokens</h2>
-        <p className="text-xs text-muted-foreground">Stored server-side only. The browser never sees the values.</p>
-        <div className="space-y-3">
-          {SECRET_KEYS.map(({ key, label, hint }) => (
-            <div key={key} className="border border-border p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-mono font-bold">{label}</p>
-                  <p className="text-[10px] font-mono text-muted-foreground">{hint}</p>
-                </div>
-                <span className={`text-[10px] font-mono px-2 py-1 border ${isSet(key) ? "border-green-700 text-green-500" : "border-border text-muted-foreground"}`}>
-                  {isSet(key) ? "✓ SET" : "NOT SET"}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="password"
-                  placeholder={isSet(key) ? "Enter new value to update…" : "Paste value here…"}
-                  value={secretInputs[key] ?? ""}
-                  onChange={(e) => setSecretInputs((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="flex-1 bg-background border border-border px-3 py-1.5 text-sm font-mono"
-                />
-                <button
-                  onClick={() => handleSaveSecret(key)}
-                  disabled={savingKey === key || !secretInputs[key]?.trim()}
-                  className="px-3 py-1.5 bg-foreground text-background text-xs font-mono disabled:opacity-40"
-                >
-                  {savingKey === key ? "Saving…" : "Save"}
-                </button>
-                {isSet(key) && (
+        <p className="text-xs text-muted-foreground">
+          Stored server-side only — the browser never sees the values. Fields below are generated from the
+          provider registry, so every key the backend needs always has a home here.
+        </p>
+        <div className="space-y-4">
+          {PROVIDERS.map((provider) => {
+            const result = testResults[provider.id];
+            return (
+              <div key={provider.id} className="border border-border p-3 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-mono font-bold">{provider.label}</p>
+                    <p className="text-[10px] font-mono text-muted-foreground">{provider.hint}</p>
+                  </div>
                   <button
-                    onClick={() => handleDeleteSecret(key)}
-                    className="px-3 py-1.5 border border-border text-xs font-mono hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => runProviderTest(provider.id)}
+                    disabled={testingId !== null}
+                    className="px-3 py-1.5 border border-border text-xs font-mono hover:bg-accent shrink-0 disabled:opacity-40"
                   >
-                    Remove
+                    {testingId === provider.id ? "Testing…" : provider.testLabel}
                   </button>
+                </div>
+
+                <div className="space-y-2">
+                  {provider.keys.map(({ key, label, hint }) => (
+                    <div key={key} className="border border-border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-mono font-bold">{label}</p>
+                          <p className="text-[10px] font-mono text-muted-foreground">{hint}</p>
+                        </div>
+                        <span className={`text-[10px] font-mono px-2 py-1 border ${isSet(key) ? "border-green-700 text-green-500" : "border-border text-muted-foreground"}`}>
+                          {isSet(key) ? "✓ SET" : "NOT SET"}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="password"
+                          placeholder={isSet(key) ? "Enter new value to update…" : "Paste value here…"}
+                          value={secretInputs[key] ?? ""}
+                          onChange={(e) => setSecretInputs((prev) => ({ ...prev, [key]: e.target.value }))}
+                          className="flex-1 bg-background border border-border px-3 py-1.5 text-sm font-mono"
+                        />
+                        <button
+                          onClick={() => handleSaveSecret(key)}
+                          disabled={savingKey === key || !secretInputs[key]?.trim()}
+                          className="px-3 py-1.5 bg-foreground text-background text-xs font-mono disabled:opacity-40"
+                        >
+                          {savingKey === key ? "Saving…" : "Save"}
+                        </button>
+                        {isSet(key) && (
+                          <button
+                            onClick={() => handleDeleteSecret(key)}
+                            className="px-3 py-1.5 border border-border text-xs font-mono hover:bg-destructive hover:text-destructive-foreground"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {result && (
+                  <div className={`border p-3 text-xs font-mono space-y-1 ${result.ok ? "border-foreground" : "border-destructive"}`}>
+                    <p className={result.ok ? "" : "text-destructive"}>
+                      {result.ok ? "✓ OK" : "✗ FAILED"}
+                      {typeof result.status === "number" && result.status > 0 && ` · HTTP ${result.status}`}
+                    </p>
+                    <p className="text-muted-foreground break-words">{result.message}</p>
+                    {result.detail && <p className="text-muted-foreground">{result.detail}</p>}
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="space-y-2 pt-2">
-          <button
-            onClick={runKlingTest}
-            disabled={testing}
-            className="px-4 py-2 bg-foreground text-background text-sm font-mono disabled:opacity-40"
-          >
-            {testing ? "Testing…" : "Test Keys"}
-          </button>
-          {klingResult && (
-            <div className={`border p-3 text-xs font-mono space-y-1 ${klingResult.ok ? "border-foreground" : "border-destructive"}`}>
-              <p className={klingResult.ok ? "" : "text-destructive"}>
-                {klingResult.ok ? "✓ OK" : "✗ FAILED"} · HTTP {klingResult.status}
-                {klingResult.code !== null && ` · code ${klingResult.code}`}
-              </p>
-              <p className="text-muted-foreground break-words">{klingResult.message}</p>
-              <p className="text-muted-foreground">
-                AK: {klingResult.akPreview ?? "—"} · SK length: {klingResult.skLength}
-              </p>
-            </div>
-          )}
+            );
+          })}
         </div>
       </section>
     </div>

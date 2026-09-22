@@ -1,37 +1,17 @@
 // Server functions for Socio-Shark
-// Caption generation via Lovable AI, posting to TikTok and Instagram.
+// Caption generation via Anthropic, posting to TikTok and Instagram.
+// All provider auth lives in src/lib/providers/* and reads through getSecret().
 
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+import { llm } from "@/lib/providers/anthropic";
+import { postReels } from "@/lib/providers/meta";
+import { postVideo } from "@/lib/providers/tiktok";
 
 interface Vibe {
   name: string;
   prompt_style: string;
   caption_tone: string;
-}
-
-async function llm(prompt: string, max = 350): Promise<string> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error("ANTHROPIC_API_KEY missing");
-  const res = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: max,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
-  const j = await res.json();
-  return (j.content?.[0]?.text ?? "").trim();
 }
 
 function captionPrompt(vibe: Vibe, brief: string, platform: "tiktok" | "instagram") {
@@ -61,51 +41,8 @@ export const generateCaptions = createServerFn({ method: "POST" })
   }));
 
 // ── Posting ────────────────────────────────────────────────────────────────
-
-async function postToInstagram(videoUrl: string, caption: string) {
-  const token = process.env.META_ACCESS_TOKEN;
-  const igId = process.env.INSTAGRAM_ACCOUNT_ID;
-  if (!token || !igId) throw new Error("Instagram tokens missing");
-  const create = await fetch(`https://graph.facebook.com/v21.0/${igId}/media`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ media_type: "REELS", video_url: videoUrl, caption, access_token: token }),
-  });
-  const created = await create.json();
-  if (!create.ok) throw new Error(`IG create: ${JSON.stringify(created)}`);
-  // wait for processing
-  for (let i = 0; i < 30; i++) {
-    await new Promise((r) => setTimeout(r, 3000));
-    const s = await fetch(`https://graph.facebook.com/v21.0/${created.id}?fields=status_code&access_token=${token}`);
-    const sj = await s.json();
-    if (sj.status_code === "FINISHED") break;
-    if (sj.status_code === "ERROR") throw new Error(`IG processing error`);
-  }
-  const pub = await fetch(`https://graph.facebook.com/v21.0/${igId}/media_publish`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ creation_id: created.id, access_token: token }),
-  });
-  const pubJson = await pub.json();
-  if (!pub.ok) throw new Error(`IG publish: ${JSON.stringify(pubJson)}`);
-  return pubJson.id as string;
-}
-
-async function postToTikTok(videoUrl: string, caption: string) {
-  const token = process.env.TIKTOK_ACCESS_TOKEN;
-  if (!token) throw new Error("TikTok token missing");
-  const res = await fetch("https://open.tiktokapis.com/v2/post/publish/video/init/", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      post_info: { title: caption.slice(0, 150), privacy_level: "PUBLIC_TO_EVERYONE" },
-      source_info: { source: "PULL_FROM_URL", video_url: videoUrl },
-    }),
-  });
-  const j = await res.json();
-  if (!res.ok || j.error?.code !== "ok") throw new Error(`TikTok: ${JSON.stringify(j)}`);
-  return j.data?.publish_id as string;
-}
+// Instagram (Meta Graph) and TikTok implementations live in their provider
+// modules — see providers/meta.ts and providers/tiktok.ts.
 
 async function publicVideoUrl(path: string) {
   const { data } = supabaseAdmin.storage.from("videos").getPublicUrl(path);
@@ -123,10 +60,10 @@ export const postNow = createServerFn({ method: "POST" })
     const result: { tiktok?: string; ig?: string; error?: string } = {};
     try {
       if (platforms.includes("tiktok") && post.caption_tiktok) {
-        result.tiktok = await postToTikTok(url, post.caption_tiktok);
+        result.tiktok = await postVideo(url, post.caption_tiktok);
       }
       if (platforms.includes("instagram") && post.caption_instagram) {
-        result.ig = await postToInstagram(url, post.caption_instagram);
+        result.ig = await postReels(url, post.caption_instagram);
       }
       await supabaseAdmin.from("posts").update({
         status: "posted",

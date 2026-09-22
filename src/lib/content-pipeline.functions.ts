@@ -4,72 +4,12 @@
 // Wired into TanStack Start server functions
 
 import { createServerFn } from "@tanstack/react-start";
-import { SignJWT } from "jose";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-
-const KLING_BASE = "https://api-singapore.klingai.com";
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_MODEL = "claude-sonnet-4-5";
-
-// ── Kling JWT auth (same pattern as kling.functions.ts) ──────────────────────
-async function klingToken() {
-  const ak = process.env.KLING_ACCESS_KEY?.trim().replace(/^[\"']|[\"']$/g, "");
-  const sk = process.env.KLING_SECRET_KEY?.trim().replace(/^[\"']|[\"']$/g, "");
-  if (!ak || !sk) throw new Error("KLING_ACCESS_KEY / KLING_SECRET_KEY not set");
-  const now = Math.floor(Date.now() / 1000);
-  return await new SignJWT({ iss: ak, exp: now + 1800, nbf: now - 5 })
-    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
-    .setIssuedAt(now)
-    .sign(new TextEncoder().encode(sk));
-}
-
-// ── Claude caption generator ─────────────────────────────────────────────────
-async function generateCaption(
-  imageBase64: string,
-  hashtags: string
-): Promise<string> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error("ANTHROPIC_API_KEY missing");
-
-  const res = await fetch(ANTHROPIC_URL, {
-    method: "POST",
-    headers: {
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: 300,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/jpeg",
-                data: imageBase64,
-              },
-            },
-            {
-              type: "text",
-              text: `Write a short, high-impact TikTok marketing caption for this image. 
-Bold, engaging, under 150 characters. 
-End with: ${hashtags}
-Return ONLY the caption.`,
-            },
-          ],
-        },
-      ],
-    }),
-  });
-
-  if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
-  const j = await res.json();
-  return (j.content?.[0]?.text ?? "").trim();
-}
+// Kling + Claude go through the shared provider modules, which read secrets via
+// getSecret() (env → app_secrets table). Never read process.env directly here:
+// this file runs on the cron/batch path and must see keys pasted in Settings.
+import { submitImage2Video } from "@/lib/providers/kling";
+import { generateImageCaption } from "@/lib/providers/anthropic";
 
 // ── List prompt templates stored in Supabase ─────────────────────────────────
 export const listPipelinePrompts = createServerFn({ method: "GET" }).handler(
@@ -143,7 +83,7 @@ export const runContentPipeline = createServerFn({ method: "POST" })
       const imgRes = await fetch(imageUrl);
       const imgBuf = await imgRes.arrayBuffer();
       const imgB64 = Buffer.from(imgBuf).toString("base64");
-      caption = await generateCaption(imgB64, hashtags);
+      caption = await generateImageCaption(imgB64, hashtags);
     } catch (e) {
       caption = `${hashtags}`;
       console.error("Caption generation failed:", e);
@@ -155,28 +95,8 @@ export const runContentPipeline = createServerFn({ method: "POST" })
 
     if (!skipKling) {
       try {
-        const token = await klingToken();
-        const res = await fetch(`${KLING_BASE}/v1/videos/image2video`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model_name: "kling-v1",
-            image: imageUrl,
-            prompt,
-            duration: String(duration),
-            aspect_ratio: "9:16",
-            cfg_scale: 0.5,
-          }),
-        });
-        const j = await res.json();
-        if (!res.ok || j.code !== 0) {
-          klingError = `Kling: ${JSON.stringify(j)}`;
-        } else {
-          klingTaskId = j.data?.task_id as string;
-        }
+        const { taskId } = await submitImage2Video({ imageUrl, prompt, duration });
+        klingTaskId = taskId;
       } catch (e) {
         klingError = e instanceof Error ? e.message : String(e);
       }
@@ -259,7 +179,7 @@ export const runBatchPipeline = createServerFn({ method: "POST" })
           const imgRes = await fetch(imageUrl);
           const imgBuf = await imgRes.arrayBuffer();
           const imgB64 = Buffer.from(imgBuf).toString("base64");
-          caption = await generateCaption(imgB64, hashtags);
+          caption = await generateImageCaption(imgB64, hashtags);
         } catch { /* caption fallback */ }
 
         let klingTaskId: string | null = null;
@@ -267,25 +187,8 @@ export const runBatchPipeline = createServerFn({ method: "POST" })
 
         if (!skipKling) {
           try {
-            const token = await klingToken();
-            const res = await fetch(`${KLING_BASE}/v1/videos/image2video`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                model_name: "kling-v1",
-                image: imageUrl,
-                prompt,
-                duration: "5",
-                aspect_ratio: "9:16",
-                cfg_scale: 0.5,
-              }),
-            });
-            const j = await res.json();
-            if (!res.ok || j.code !== 0) klingError = JSON.stringify(j);
-            else klingTaskId = j.data?.task_id as string;
+            const { taskId } = await submitImage2Video({ imageUrl, prompt, duration: 5 });
+            klingTaskId = taskId;
           } catch (e) {
             klingError = e instanceof Error ? e.message : String(e);
           }
