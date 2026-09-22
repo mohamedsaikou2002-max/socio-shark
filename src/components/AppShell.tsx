@@ -1,8 +1,7 @@
 import { Link, Outlet, useLocation } from "@tanstack/react-router";
 import { SharkLogo } from "./SharkLogo";
 import { ThemeToggle } from "./ThemeToggle";
-import { useAuth, useMembership, isActive, signOut } from "@/hooks/useAuth";
-import { checkoutUrl } from "@/lib/billing";
+import { useAuth, signOut } from "@/hooks/useAuth";
 
 const NAV = [
   { to: "/", label: "Library" },
@@ -19,8 +18,6 @@ const NAV = [
 export function AppShell() {
   const { pathname } = useLocation();
   const { user, loading } = useAuth();
-  const { data: membership } = useMembership(user?.id);
-  const active = isActive(membership);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -52,26 +49,12 @@ export function AppShell() {
           )}
           <div className="flex items-center gap-2 shrink-0">
             {loading ? null : user ? (
-              <>
-                {active ? (
-                  <span className="hidden sm:inline-flex items-center border border-border px-2 py-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-                    member
-                  </span>
-                ) : (
-                  <a
-                    href={checkoutUrl(user.id, user.email)}
-                    className="bg-foreground px-3 py-1.5 font-mono text-xs text-background hover:opacity-90"
-                  >
-                    Activate $297/mo
-                  </a>
-                )}
-                <button
-                  onClick={() => signOut()}
-                  className="border border-border px-3 py-1.5 font-mono text-xs hover:bg-muted"
-                >
-                  Sign out
-                </button>
-              </>
+              <button
+                onClick={() => signOut()}
+                className="border border-border px-3 py-1.5 font-mono text-xs hover:bg-muted"
+              >
+                Sign out
+              </button>
             ) : (
               <Link
                 to="/auth"
@@ -106,7 +89,6 @@ export function AppShell() {
       <footer className="border-t border-border mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-xs font-mono text-muted-foreground flex flex-wrap gap-2 justify-between">
           <span>SOCIO-SHARK // v1</span>
-          <span>$297/mo membership</span>
           <span>autonomous social ops</span>
         </div>
       </footer>
