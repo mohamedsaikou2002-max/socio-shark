@@ -1,10 +1,8 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
-import { SharkLogo } from "@/components/SharkLogo";
 import { useAuth } from "@/hooks/useAuth";
-import { MEMBERSHIP_PRICE } from "@/lib/billing";
+import { SharkLogo } from "@/components/SharkLogo";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -28,6 +26,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
@@ -57,11 +56,46 @@ function AuthPage() {
     }
   }
 
+  // Google sign-in goes straight to Supabase's OAuth endpoint. (The Lovable
+  // cloud-auth broker this used to call lives at "/~oauth/initiate", which only
+  // exists on Lovable hosting — on any self-hosted/dev URL it 404s.)
   async function google() {
+    if (googleBusy) return;
+    setGoogleBusy(true);
     try {
-      await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin, skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("No OAuth URL returned");
+
+      // Pre-flight the authorize URL so a Supabase-side misconfiguration
+      // (missing client secret, blocked redirect) surfaces as a toast instead
+      // of navigating the tab to a raw JSON error page.
+      try {
+        const res = await fetch(data.url, { redirect: "follow" });
+        if (!res.ok) {
+          const body = await res.text();
+          let msg = body.slice(0, 200);
+          try {
+            const j = JSON.parse(body) as { msg?: string; error_description?: string };
+            msg = j.msg ?? j.error_description ?? msg;
+          } catch {
+            /* keep raw text */
+          }
+          toast.error(`Google sign-in unavailable: ${msg}`);
+          return;
+        }
+      } catch {
+        // Preflight blocked (CORS/offline) — navigate anyway and let the
+        // browser follow the flow.
+      }
+      window.location.assign(data.url);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
+    } finally {
+      setGoogleBusy(false);
     }
   }
 
@@ -94,15 +128,16 @@ function AuthPage() {
                 {mode === "signin" ? "Sign in" : "Create account"}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Membership is {MEMBERSHIP_PRICE}/month. Create an account first, then activate it.
+                Create an account, or sign in if you already have one.
               </p>
             </div>
 
             <button
               onClick={google}
-              className="flex w-full items-center justify-center gap-2 border border-border px-4 py-2 font-mono text-sm hover:bg-muted"
+              disabled={googleBusy}
+              className="flex w-full items-center justify-center gap-2 border border-border px-4 py-2 font-mono text-sm hover:bg-muted disabled:opacity-50"
             >
-              Continue with Google
+              {googleBusy ? "Redirecting…" : "Continue with Google"}
             </button>
 
             <div className="flex items-center gap-3 text-[10px] font-mono uppercase text-muted-foreground">
@@ -143,7 +178,7 @@ function AuthPage() {
         )}
 
         <p className="text-center font-mono text-[10px] text-muted-foreground">
-          <Link to="/activate" className="hover:text-foreground">have an activation code?</Link>
+          sign in and everything is unlocked
         </p>
       </div>
     </div>
