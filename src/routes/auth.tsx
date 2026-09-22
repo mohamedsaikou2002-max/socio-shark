@@ -9,10 +9,10 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
   head: () => ({
     meta: [
-      { title: "Sign in — Socio-Shark Membership" },
+      { title: "Sign in — Socio-Shark" },
       { name: "description", content: "Sign in or create your Socio-Shark account to run the autonomous social posting pipeline." },
-      { property: "og:title", content: "Sign in — Socio-Shark Membership" },
-      { property: "og:description", content: "Create an account and unlock the Socio-Shark autonomous posting pipeline." },
+      { property: "og:title", content: "Sign in — Socio-Shark" },
+      { property: "og:description", content: "Create an account and start the Socio-Shark autonomous posting pipeline." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
