@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ActivateRouteImport } from './routes/activate'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
@@ -20,6 +21,9 @@ import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPostedRouteImport } from './routes/_authenticated/posted'
 import { Route as AuthenticatedPipelineRouteImport } from './routes/_authenticated/pipeline'
 import { Route as AuthenticatedMediaPrepRouteImport } from './routes/_authenticated/media-prep'
+import { Route as AuthenticatedIndustriesRouteImport } from './routes/_authenticated/industries'
+import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
+import { Route as AuthenticatedAccountsRouteImport } from './routes/_authenticated/accounts'
 import { Route as AuthenticatedPostIdRouteImport } from './routes/_authenticated/post.$id'
 import { Route as ApiPublicHooksRunPipelineRouteImport } from './routes/api/public/hooks/run-pipeline'
 import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/hooks/run-due'
@@ -27,6 +31,11 @@ import { Route as ApiPublicHooksRunDueRouteImport } from './routes/api/public/ho
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivateRoute = ActivateRouteImport.update({
+  id: '/activate',
+  path: '/activate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -78,6 +87,21 @@ const AuthenticatedMediaPrepRoute = AuthenticatedMediaPrepRouteImport.update({
   path: '/media-prep',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIndustriesRoute = AuthenticatedIndustriesRouteImport.update({
+  id: '/industries',
+  path: '/industries',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAccountsRoute = AuthenticatedAccountsRouteImport.update({
+  id: '/accounts',
+  path: '/accounts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPostIdRoute = AuthenticatedPostIdRouteImport.update({
   id: '/post/$id',
   path: '/post/$id',
@@ -97,7 +121,11 @@ const ApiPublicHooksRunDueRoute = ApiPublicHooksRunDueRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
+  '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
+  '/accounts': typeof AuthenticatedAccountsRoute
+  '/billing': typeof AuthenticatedBillingRoute
+  '/industries': typeof AuthenticatedIndustriesRoute
   '/media-prep': typeof AuthenticatedMediaPrepRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/posted': typeof AuthenticatedPostedRoute
@@ -111,7 +139,11 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/run-pipeline': typeof ApiPublicHooksRunPipelineRoute
 }
 export interface FileRoutesByTo {
+  '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
+  '/accounts': typeof AuthenticatedAccountsRoute
+  '/billing': typeof AuthenticatedBillingRoute
+  '/industries': typeof AuthenticatedIndustriesRoute
   '/media-prep': typeof AuthenticatedMediaPrepRoute
   '/pipeline': typeof AuthenticatedPipelineRoute
   '/posted': typeof AuthenticatedPostedRoute
@@ -128,7 +160,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
+  '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
+  '/_authenticated/billing': typeof AuthenticatedBillingRoute
+  '/_authenticated/industries': typeof AuthenticatedIndustriesRoute
   '/_authenticated/media-prep': typeof AuthenticatedMediaPrepRoute
   '/_authenticated/pipeline': typeof AuthenticatedPipelineRoute
   '/_authenticated/posted': typeof AuthenticatedPostedRoute
@@ -146,7 +182,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activate'
     | '/auth'
+    | '/accounts'
+    | '/billing'
+    | '/industries'
     | '/media-prep'
     | '/pipeline'
     | '/posted'
@@ -160,7 +200,11 @@ export interface FileRouteTypes {
     | '/api/public/hooks/run-pipeline'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/activate'
     | '/auth'
+    | '/accounts'
+    | '/billing'
+    | '/industries'
     | '/media-prep'
     | '/pipeline'
     | '/posted'
@@ -176,7 +220,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/activate'
     | '/auth'
+    | '/_authenticated/accounts'
+    | '/_authenticated/billing'
+    | '/_authenticated/industries'
     | '/_authenticated/media-prep'
     | '/_authenticated/pipeline'
     | '/_authenticated/posted'
@@ -193,6 +241,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ActivateRoute: typeof ActivateRoute
   AuthRoute: typeof AuthRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
   ApiPublicHooksRunPipelineRoute: typeof ApiPublicHooksRunPipelineRoute
@@ -205,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activate': {
+      id: '/activate'
+      path: '/activate'
+      fullPath: '/activate'
+      preLoaderRoute: typeof ActivateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -277,6 +333,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMediaPrepRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/industries': {
+      id: '/_authenticated/industries'
+      path: '/industries'
+      fullPath: '/industries'
+      preLoaderRoute: typeof AuthenticatedIndustriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/billing': {
+      id: '/_authenticated/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/accounts': {
+      id: '/_authenticated/accounts'
+      path: '/accounts'
+      fullPath: '/accounts'
+      preLoaderRoute: typeof AuthenticatedAccountsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/post/$id': {
       id: '/_authenticated/post/$id'
       path: '/post/$id'
@@ -302,6 +379,9 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAccountsRoute: typeof AuthenticatedAccountsRoute
+  AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
+  AuthenticatedIndustriesRoute: typeof AuthenticatedIndustriesRoute
   AuthenticatedMediaPrepRoute: typeof AuthenticatedMediaPrepRoute
   AuthenticatedPipelineRoute: typeof AuthenticatedPipelineRoute
   AuthenticatedPostedRoute: typeof AuthenticatedPostedRoute
@@ -315,6 +395,9 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAccountsRoute: AuthenticatedAccountsRoute,
+  AuthenticatedBillingRoute: AuthenticatedBillingRoute,
+  AuthenticatedIndustriesRoute: AuthenticatedIndustriesRoute,
   AuthenticatedMediaPrepRoute: AuthenticatedMediaPrepRoute,
   AuthenticatedPipelineRoute: AuthenticatedPipelineRoute,
   AuthenticatedPostedRoute: AuthenticatedPostedRoute,
@@ -332,6 +415,7 @@ const AuthenticatedRouteRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ActivateRoute: ActivateRoute,
   AuthRoute: AuthRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
   ApiPublicHooksRunPipelineRoute: ApiPublicHooksRunPipelineRoute,
