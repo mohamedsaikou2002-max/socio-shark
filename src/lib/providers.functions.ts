@@ -6,11 +6,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { providerById, type ProviderId, type ProviderTestResult } from "@/lib/providers/registry";
 import { testMetaAuth } from "@/lib/providers/meta";
 import { testTikTokAuth } from "@/lib/providers/tiktok";
+import { testGeminiAuth } from "@/lib/providers/gemini-test";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const TESTS: Record<ProviderId, () => Promise<ProviderTestResult>> = {
   meta: testMetaAuth,
   tiktok: testTikTokAuth,
+  gemini: testGeminiAuth,
 };
 
 /** Run a provider's testAuth(). Never throws — failures come back as results. */

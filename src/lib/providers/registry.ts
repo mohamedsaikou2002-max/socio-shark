@@ -7,7 +7,7 @@
 // The Settings field and save-time verification then appear automatically.
 // Nothing here may import server-only code — it is imported by the browser.
 
-export type ProviderId = "meta" | "tiktok";
+export type ProviderId = "meta" | "tiktok" | "gemini";
 
 export interface SecretKeyDef {
   /** `app_secrets` row key and `process.env` name — identical by design. */
@@ -55,6 +55,16 @@ export const PROVIDERS: ProviderDef[] = [
     testLabel: "Test TikTok key",
     keys: [
       { key: "TIKTOK_ACCESS_TOKEN", label: "TikTok Access Token", hint: "TikTok Content Posting API token" },
+    ],
+  },
+  {
+    id: "gemini",
+    label: "Gemini text (captions and strategy)",
+    hint: "Generates editable caption suggestions and industry strategies. Keys stay server-side.",
+    testLabel: "Test Gemini keys",
+    keys: [
+      { key: "GEMINI_CAPTION_API_KEY", label: "Caption API key", hint: "Google AI Studio key for caption suggestions" },
+      { key: "GEMINI_STRATEGY_API_KEY", label: "Strategy API key", hint: "Google AI Studio key for business strategy" },
     ],
   },
 ];

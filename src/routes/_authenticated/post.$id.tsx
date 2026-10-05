@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Post, fmtDate, STATUS_LABEL } from "@/lib/socio-shared";
 import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
 import { postNow } from "@/lib/socio.functions";
+import { suggestCaption } from "@/lib/marketing.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/post/$id")({ component: PostDetail });
@@ -15,11 +16,23 @@ function PostDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const postNowFn = useServerFn(postNow);
+  const suggestCaptionFn = useServerFn(suggestCaption);
   const [tt, setTt] = useState("");
   const [ig, setIg] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [platforms, setPlatforms] = useState<string[]>(["tiktok", "instagram"]);
   const [busy, setBusy] = useState(false);
+  const [captionBusy, setCaptionBusy] = useState<string | null>(null);
+
+  async function generateCaption(platform: "instagram" | "tiktok") {
+    setCaptionBusy(platform);
+    try {
+      const { caption } = await suggestCaptionFn({ data: { postId: id, platform } });
+      if (platform === "instagram") setIg(caption); else setTt(caption);
+      toast.success("Caption suggestion ready to review");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Could not generate caption"); }
+    finally { setCaptionBusy(null); }
+  }
 
   const { data: post } = useQuery({
     queryKey: ["post", id],
@@ -110,13 +123,13 @@ function PostDetail() {
         </div>
 
         <div>
-          <label className="text-xs font-mono uppercase text-muted-foreground">TikTok caption</label>
+          <div className="flex justify-between items-center"><label className="text-xs font-mono uppercase text-muted-foreground">TikTok caption</label><button onClick={() => generateCaption("tiktok")} disabled={captionBusy !== null} className="text-xs underline disabled:opacity-50">{captionBusy === "tiktok" ? "Generating…" : "Suggest with Gemini"}</button></div>
           <textarea value={tt} onChange={(e) => setTt(e.target.value)} rows={4} className="mt-1 w-full bg-background border border-border px-3 py-2 text-sm font-mono" />
           <p className="text-[10px] text-muted-foreground text-right mt-0.5">{tt.length} chars</p>
         </div>
 
         <div>
-          <label className="text-xs font-mono uppercase text-muted-foreground">Instagram caption</label>
+          <div className="flex justify-between items-center"><label className="text-xs font-mono uppercase text-muted-foreground">Instagram caption</label><button onClick={() => generateCaption("instagram")} disabled={captionBusy !== null} className="text-xs underline disabled:opacity-50">{captionBusy === "instagram" ? "Generating…" : "Suggest with Gemini"}</button></div>
           <textarea value={ig} onChange={(e) => setIg(e.target.value)} rows={6} className="mt-1 w-full bg-background border border-border px-3 py-2 text-sm font-mono" />
           <p className="text-[10px] text-muted-foreground text-right mt-0.5">{ig.length} chars</p>
         </div>

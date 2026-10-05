@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ActivateRouteImport } from './routes/activate'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
@@ -38,6 +39,11 @@ const AuthRoute = AuthRouteImport.update({
 const ActivateRoute = ActivateRouteImport.update({
   id: '/activate',
   path: '/activate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
+  '/onboarding': typeof OnboardingRoute
   '/accounts': typeof AuthenticatedAccountsRoute
   '/posted': typeof AuthenticatedPostedRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
+  '/onboarding': typeof OnboardingRoute
   '/accounts': typeof AuthenticatedAccountsRoute
   '/posted': typeof AuthenticatedPostedRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -138,6 +146,7 @@ export interface FileRoutesById {
   '/activate': typeof ActivateRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
+  '/onboarding': typeof OnboardingRoute
   '/_authenticated/accounts': typeof AuthenticatedAccountsRoute
   '/_authenticated/posted': typeof AuthenticatedPostedRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/activate'
     | '/auth'
     | '/billing'
+    | '/onboarding'
     | '/accounts'
     | '/posted'
     | '/products'
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/activate'
     | '/auth'
     | '/billing'
+    | '/onboarding'
     | '/accounts'
     | '/posted'
     | '/products'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/activate'
     | '/auth'
     | '/billing'
+    | '/onboarding'
     | '/_authenticated/accounts'
     | '/_authenticated/posted'
     | '/_authenticated/products'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   ActivateRoute: typeof ActivateRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
+  OnboardingRoute: typeof OnboardingRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
   ApiPublicHooksRunDueRoute: typeof ApiPublicHooksRunDueRoute
 }
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -353,6 +373,7 @@ const rootRouteChildren: RootRouteChildren = {
   ActivateRoute: ActivateRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
+  OnboardingRoute: OnboardingRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
   ApiPublicHooksRunDueRoute: ApiPublicHooksRunDueRoute,
 }

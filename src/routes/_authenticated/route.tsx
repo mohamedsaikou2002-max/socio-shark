@@ -6,6 +6,10 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+    const { data: profile, error: profileError } = await (supabase as any)
+      .from("business_profiles").select("user_id").eq("user_id", data.user.id).maybeSingle();
+    if (profileError) throw new Error("Unable to load your business profile. Please apply the latest database migration.");
+    if (!profile) throw redirect({ to: "/onboarding" });
     const { data: subscription, error: subscriptionError } = await supabase
       .from("subscriptions").select("status,current_period_end")
       .eq("user_id", data.user.id).maybeSingle();
