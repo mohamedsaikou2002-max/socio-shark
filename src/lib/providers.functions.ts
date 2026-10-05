@@ -8,6 +8,7 @@ import { testKlingAuth } from "@/lib/providers/kling";
 import { testMetaAuth } from "@/lib/providers/meta";
 import { testTikTokAuth } from "@/lib/providers/tiktok";
 import { testAnthropicAuth } from "@/lib/providers/anthropic";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const TESTS: Record<ProviderId, () => Promise<ProviderTestResult>> = {
   kling: testKlingAuth,
@@ -30,5 +31,6 @@ export async function runProviderTest(providerId: string): Promise<ProviderTestR
 }
 
 export const testProvider = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { providerId: string }) => d)
   .handler(async ({ data }) => runProviderTest(data.providerId));

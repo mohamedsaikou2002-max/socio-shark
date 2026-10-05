@@ -10,9 +10,12 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 // this file runs on the cron/batch path and must see keys pasted in Settings.
 import { submitImage2Video } from "@/lib/providers/kling";
 import { generateImageCaption } from "@/lib/providers/anthropic";
+import { requireSupabaseAuth, requireSupabaseAuthOrCron } from "@/integrations/supabase/auth-middleware";
 
 // ── List prompt templates stored in Supabase ─────────────────────────────────
-export const listPipelinePrompts = createServerFn({ method: "GET" }).handler(
+export const listPipelinePrompts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(
   async () => {
     const { data, error } = await supabaseAdmin
       .from("saved_prompts")
@@ -26,6 +29,7 @@ export const listPipelinePrompts = createServerFn({ method: "GET" }).handler(
 
 // ── Run pipeline: pick random product image → caption → Kling video ──────────
 export const runContentPipeline = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator(
     (d: {
       promptOverride?: string;
@@ -135,6 +139,7 @@ export const runContentPipeline = createServerFn({ method: "POST" })
 
 // ── Batch pipeline: run N times ───────────────────────────────────────────────
 export const runBatchPipeline = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuthOrCron])
   .inputValidator(
     (d: {
       count?: number;
@@ -143,7 +148,11 @@ export const runBatchPipeline = createServerFn({ method: "POST" })
     }) => d
   )
   .handler(async ({ data }) => {
-    const count = Math.min(data.count ?? 3, 10); // cap at 10 per batch
+    const requestedCount = data.count ?? 3;
+    if (!Number.isInteger(requestedCount) || requestedCount < 1) {
+      throw new Error("Batch count must be a positive whole number");
+    }
+    const count = Math.min(requestedCount, 10); // cap at 10 per batch
     const results = [];
 
     for (let i = 0; i < count; i++) {
@@ -199,7 +208,7 @@ export const runBatchPipeline = createServerFn({ method: "POST" })
           .insert({
             video_path: "",
             status: "draft",
-            generation_status: klingTaskId ? "generating" : "failed",
+            generation_status: klingTaskId ? "generating" : klingError ? "failed" : "skipped",
             kling_task_id: klingTaskId,
             generation_prompt: prompt,
             source_image_path: product.image_path,

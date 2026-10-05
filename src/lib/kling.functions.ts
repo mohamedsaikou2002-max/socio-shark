@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { submitImage2Video, fetchImage2VideoTask } from "@/lib/providers/kling";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 function publicUrl(bucket: string, path: string) {
   return supabaseAdmin.storage.from(bucket).getPublicUrl(path).data.publicUrl;
@@ -11,6 +12,7 @@ function publicUrl(bucket: string, path: string) {
 
 // Kick off generation: creates a draft post in 'generating' state with kling_task_id
 export const startKlingGeneration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { productId: string; vibeId?: string; prompt?: string; duration?: 5 | 10 }) => d)
   .handler(async ({ data }) => {
     const { data: product, error: pErr } = await supabaseAdmin
@@ -54,6 +56,7 @@ export const startKlingGeneration = createServerFn({ method: "POST" })
 
 // Poll a job; if completed, downloads the video into the videos bucket and finalizes the post.
 export const pollKlingPost = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { postId: string }) => d)
   .handler(async ({ data }) => {
     const { data: post } = await supabaseAdmin.from("posts").select("*").eq("id", data.postId).single();

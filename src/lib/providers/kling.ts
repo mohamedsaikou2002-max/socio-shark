@@ -76,7 +76,7 @@ export async function testKlingAuth(): Promise<ProviderTestResult> {
   } catch (e) {
     return { providerId, ok: false, status: 0, message: e instanceof Error ? e.message : String(e) };
   }
-  const detail = `AK ${ak.slice(0, 4)}…${ak.slice(-4)} (len ${ak.length}) · SK length ${sk.length}`;
+  const detail = `Access and secret keys present (lengths ${ak.length} and ${sk.length})`;
   try {
     const token = await klingToken();
     // Lightweight auth-only endpoint: list image2video tasks

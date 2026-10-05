@@ -6,8 +6,10 @@ import type { Database } from './types'
 
 
 
-export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
+function createAuthMiddleware(allowCron: boolean) {
+  return createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
+    const request = getRequest();
     
     const SUPABASE_URL = process.env.SUPABASE_URL;
     const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -22,24 +24,23 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Response(message, { status: 500 });
     }
     
-    const request = getRequest();
-
     if (!request?.headers) {
       throw new Response('Unauthorized: No request headers available', { status: 401 });
     }
 
+    const cronSecret = process.env.CRON_SECRET;
+    const isCron = Boolean(allowCron && cronSecret && request.headers.get('x-cron-secret') === cronSecret);
     const authHeader = request.headers.get('authorization');
-
-    if (!authHeader) {
+    if (!authHeader && !isCron) {
       throw new Response('Unauthorized: No authorization header provided', { status: 401 });
     }
 
-    if (!authHeader.startsWith('Bearer ')) {
+    if (authHeader && !authHeader.startsWith('Bearer ')) {
       throw new Response('Unauthorized: Only Bearer tokens are supported', { status: 401 });
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    if (!token) {
+    const token = authHeader?.replace('Bearer ', '');
+    if (authHeader && !token) {
       throw new Response('Unauthorized: No token provided', { status: 401 });
     }
 
@@ -47,11 +48,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       SUPABASE_URL!,
       SUPABASE_PUBLISHABLE_KEY!,
       {
-        global: {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        global: token ? { headers: { Authorization: `Bearer ${token}` } } : {},
         auth: {
           storage: undefined,
           persistSession: false,
@@ -60,21 +57,30 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       }
     );
 
-    const { data, error } = await supabase.auth.getClaims(token);
-    if (error || !data?.claims) {
-      throw new Response('Unauthorized: Invalid token', { status: 401 });
-    }
-
-    if (!data.claims.sub) {
-      throw new Response('Unauthorized: No user ID found in token', { status: 401 });
+    let claims: { sub: string; [key: string]: unknown };
+    if (token) {
+      const { data, error } = await supabase.auth.getClaims(token);
+      if (error || !data?.claims) {
+        throw new Response('Unauthorized: Invalid token', { status: 401 });
+      }
+      if (!data.claims.sub) {
+        throw new Response('Unauthorized: No user ID found in token', { status: 401 });
+      }
+      claims = data.claims as typeof claims;
+    } else {
+      claims = { sub: 'cron' };
     }
 
     return next({
       context: {
         supabase,
-        userId: data.claims.sub,
-        claims: data.claims,
+        userId: claims.sub,
+        claims,
       },
     })
   }
-)
+  )
+}
+
+export const requireSupabaseAuth = createAuthMiddleware(false)
+export const requireSupabaseAuthOrCron = createAuthMiddleware(true)

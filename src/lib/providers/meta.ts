@@ -20,24 +20,32 @@ export async function postReels(videoUrl: string, caption: string): Promise<stri
     body: JSON.stringify({ media_type: "REELS", video_url: videoUrl, caption, access_token: token }),
   });
   const created = await create.json();
-  if (!create.ok) throw new Error(`IG create: ${JSON.stringify(created)}`);
+  if (!create.ok || !created.id) throw new Error(`IG create: ${JSON.stringify(created)}`);
   // wait for processing
+  let ready = false;
   for (let i = 0; i < 30; i++) {
     await new Promise((r) => setTimeout(r, 3000));
     const s = await fetch(
       `${GRAPH_BASE}/${created.id}?fields=status_code&access_token=${encodeURIComponent(token)}`
     );
     const sj = await s.json();
-    if (sj.status_code === "FINISHED") break;
-    if (sj.status_code === "ERROR") throw new Error(`IG processing error`);
+    if (!s.ok) throw new Error(`IG status: ${JSON.stringify(sj)}`);
+    if (sj.status_code === "FINISHED") {
+      ready = true;
+      break;
+    }
+    if (sj.status_code === "ERROR" || sj.status_code === "EXPIRED") {
+      throw new Error(`IG processing failed: ${sj.status_code}`);
+    }
   }
+  if (!ready) throw new Error("Instagram Reel processing timed out; publishing was not attempted");
   const pub = await fetch(`${GRAPH_BASE}/${igId}/media_publish`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ creation_id: created.id, access_token: token }),
   });
   const pubJson = await pub.json();
-  if (!pub.ok) throw new Error(`IG publish: ${JSON.stringify(pubJson)}`);
+  if (!pub.ok || !pubJson.id) throw new Error(`IG publish: ${JSON.stringify(pubJson)}`);
   return pubJson.id as string;
 }
 

@@ -10,14 +10,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { providerByKey, allSecretKeys } from "@/lib/providers/registry";
 import { runProviderTest } from "@/lib/providers.functions";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Re-exported for existing callers — canonical implementation lives in secrets.core.ts
 export { getSecret } from "@/lib/secrets.core";
 
 // ── Save a secret ────────────────────────────────────────────────────────────
 export const saveSecret = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { key: string; value: string }) => d)
   .handler(async ({ data }) => {
+    if (!providerByKey(data.key)) throw new Error("Unknown API key");
+    if (!data.value.trim()) throw new Error("API key cannot be empty");
     const { error } = await supabaseAdmin
       .from("app_secrets")
       .upsert({ key: data.key, value: data.value, updated_at: new Date().toISOString() });
@@ -33,7 +37,9 @@ export const saveSecret = createServerFn({ method: "POST" })
 // ── Check which secrets are set (returns keys only, never values) ────────────
 // Includes keys that exist only as Worker env vars, so the UI badge matches
 // what getSecret() can actually resolve.
-export const listSecretKeys = createServerFn({ method: "GET" }).handler(async () => {
+export const listSecretKeys = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
   const { data, error } = await supabaseAdmin
     .from("app_secrets")
     .select("key, updated_at");
@@ -49,8 +55,10 @@ export const listSecretKeys = createServerFn({ method: "GET" }).handler(async ()
 
 // ── Delete a secret ──────────────────────────────────────────────────────────
 export const deleteSecret = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: { key: string }) => d)
   .handler(async ({ data }) => {
+    if (!providerByKey(data.key)) throw new Error("Unknown API key");
     const { error } = await supabaseAdmin
       .from("app_secrets")
       .delete()

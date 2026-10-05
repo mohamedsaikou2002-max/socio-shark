@@ -3,7 +3,7 @@ import { requireSecret } from "@/lib/secrets.core";
 import type { ProviderTestResult } from "@/lib/providers/registry";
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-export const ANTHROPIC_MODEL = "claude-sonnet-4-5";
+export const ANTHROPIC_MODEL = "claude-sonnet-4-6";
 
 async function anthropicKey(): Promise<string> {
   return await requireSecret("ANTHROPIC_API_KEY");
@@ -81,7 +81,7 @@ export async function testAnthropicAuth(): Promise<ProviderTestResult> {
   } catch (e) {
     return { providerId, ok: false, status: 0, message: e instanceof Error ? e.message : String(e) };
   }
-  const detail = `key ${key.slice(0, 6)}… (len ${key.length})`;
+  const detail = `API key present (length ${key.length})`;
   try {
     const res = await fetch("https://api.anthropic.com/v1/models", {
       headers: { "x-api-key": key, "anthropic-version": "2023-06-01" },
