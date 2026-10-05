@@ -323,9 +323,11 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          account_limit: number
           amount_paid_cents: number | null
           current_period_end: string | null
           currency: string | null
+          plan_key: string
           status: string
           stripe_checkout_session_id: string | null
           stripe_customer_id: string | null
@@ -334,9 +336,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_limit?: number
           amount_paid_cents?: number | null
           current_period_end?: string | null
           currency?: string | null
+          plan_key?: string
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
@@ -345,9 +349,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_limit?: number
           amount_paid_cents?: number | null
           current_period_end?: string | null
           currency?: string | null
+          plan_key?: string
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null

@@ -1,17 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, Check, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { SUBSCRIPTION_PLANS } from "@/lib/plans";
 
 export const Route = createFileRoute("/billing")({
   head: () => ({ meta: [
     { title: "Get access — Socio-Shark" },
-    { name: "description", content: "Unlock your private Socio-Shark content library with a one-time $300 payment." },
+    { name: "description", content: "Choose a monthly Socio-Shark plan for one, three, or five connected social accounts." },
     { property: "og:title", content: "Get access — Socio-Shark" },
-    { property: "og:description", content: "Unlock your private Socio-Shark content library with a one-time $300 payment." },
+    { property: "og:description", content: "Choose a monthly Socio-Shark plan for one, three, or five connected social accounts." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -23,7 +24,11 @@ function BillingPage() {
   const { user, session, loading } = useAuth();
   const [returned, setReturned] = useState(false);
   useEffect(() => { setReturned(new URLSearchParams(window.location.search).get("checkout") === "success"); }, []);
-  const paymentLink = import.meta.env.VITE_STRIPE_PAYMENT_LINK_URL;
+  const paymentLinks: Record<string, string | undefined> = {
+    single: import.meta.env.VITE_STRIPE_PAYMENT_LINK_URL_1,
+    team: import.meta.env.VITE_STRIPE_PAYMENT_LINK_URL_3,
+    agency: import.meta.env.VITE_STRIPE_PAYMENT_LINK_URL_5,
+  };
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["subscription", user?.id],
     enabled: Boolean(user),
@@ -42,9 +47,12 @@ function BillingPage() {
     }
   }, [subscription, navigate]);
 
-  const checkoutUrl = user && paymentLink
-    ? `${paymentLink}${paymentLink.includes("?") ? "&" : "?"}client_reference_id=${encodeURIComponent(user.id)}&prefilled_email=${encodeURIComponent(user.email ?? "")}`
-    : undefined;
+  function checkoutUrl(planKey: string) {
+    const paymentLink = paymentLinks[planKey];
+    return user && paymentLink
+      ? `${paymentLink}${paymentLink.includes("?") ? "&" : "?"}client_reference_id=${encodeURIComponent(user.id)}&prefilled_email=${encodeURIComponent(user.email ?? "")}`
+      : undefined;
+  }
 
   if (loading || (user && isLoading)) return <main className="mx-auto max-w-xl p-8">Checking access…</main>;
 
@@ -61,31 +69,23 @@ function BillingPage() {
           <Button asChild className="mt-4"><Link to="/auth">Sign in or create account</Link></Button>
         </div>
       )}
-      {session && (
-        <section className="border border-foreground bg-foreground p-6 text-background sm:p-8">
-          <div className="flex items-center justify-between border-b border-background/20 pb-5">
-            <div>
-              <p className="font-mono text-xs uppercase opacity-65">One-time access</p>
-              <p className="mt-2 text-4xl font-bold">$300</p>
-            </div>
-            <ShieldCheck className="h-8 w-8" aria-hidden="true" />
-          </div>
-          <ul className="my-5 grid gap-3 text-sm sm:grid-cols-2">
-            {["Content library and bulk uploads", "Instagram and TikTok workflow", "Scheduling and publishing", "Client-isolated Supabase storage"].map((item) => (
-              <li key={item} className="flex items-center gap-2"><Check className="h-4 w-4" />{item}</li>
-            ))}
-          </ul>
-          {checkoutUrl ? (
-            <Button asChild variant="secondary" className="w-full justify-between font-mono">
-              <a href={checkoutUrl}>Pay $300 and unlock access <ArrowUpRight /></a>
-            </Button>
-          ) : (
-            <p className="border border-background/30 p-3 text-sm">Stripe is not configured yet. Add VITE_STRIPE_PAYMENT_LINK_URL for the $300 one-time payment link.</p>
-          )}
-          <p className="mt-4 text-xs opacity-70">Access activates only after Stripe confirms a successful $300 USD payment. Failed, cancelled, or incomplete checkouts stay locked.</p>
-          <p className="mt-4 font-mono text-xs opacity-70">Signed in as {user?.email}</p>
-        </section>
-      )}
+      <section className="grid gap-4 md:grid-cols-3">
+        {SUBSCRIPTION_PLANS.map((plan) => {
+          const link = checkoutUrl(plan.key);
+          return <article key={plan.key} className="flex flex-col border border-border p-5">
+            <p className="font-mono text-xs uppercase text-muted-foreground">{plan.name}</p>
+            <p className="mt-3 text-3xl font-bold">${plan.price}<span className="text-sm font-normal text-muted-foreground">/month</span></p>
+            <p className="mt-2 text-sm text-muted-foreground">{plan.description}</p>
+            <ul className="my-5 flex-1 space-y-2 text-sm">
+              {[`${plan.accountLimit} connected account${plan.accountLimit === 1 ? "" : "s"}`, "Private media library", "Review queue and scheduling"].map((item) => <li key={item} className="flex items-center gap-2"><Check className="h-4 w-4" />{item}</li>)}
+            </ul>
+            {!session ? <Button asChild variant="outline" className="w-full"><Link to="/auth">Sign in to choose</Link></Button>
+              : link ? <Button asChild className="w-full justify-between font-mono"><a href={link}>Choose ${plan.price}/month <ArrowUpRight /></a></Button>
+              : <p className="border border-dashed border-border p-3 text-xs text-muted-foreground">Payment link for this plan is not configured yet.</p>}
+          </article>;
+        })}
+      </section>
+      {session && <p className="text-xs text-muted-foreground">Access starts after Stripe confirms the first successful monthly payment. Cancelled or unpaid subscriptions lose access when their paid period ends. Signed in as {user?.email}</p>}
       {returned && (
         <p role="status" className="border border-border p-4 text-sm">Stripe returned successfully. Waiting for verified payment confirmation…</p>
       )}

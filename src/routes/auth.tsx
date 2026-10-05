@@ -153,7 +153,7 @@ function AuthPage() {
         )}
 
         <p className="text-center font-mono text-[10px] text-muted-foreground">
-          $300 verified payment required to unlock the app
+          An active subscription is required to unlock the app
         </p>
       </div>
     </div>

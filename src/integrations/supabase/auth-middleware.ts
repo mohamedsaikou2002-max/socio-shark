@@ -75,7 +75,7 @@ function createAuthMiddleware(allowCron: boolean) {
         throw new Response('Unable to verify app access. Try again shortly.', { status: 503 });
       }
       if (!active) {
-        throw new Response('An active $300 access payment is required.', { status: 402 });
+        throw new Response('An active subscription is required to use the app.', { status: 402 });
       }
     } else {
       claims = { sub: 'cron' };
