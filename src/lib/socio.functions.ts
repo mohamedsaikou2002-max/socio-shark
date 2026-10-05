@@ -30,9 +30,8 @@ export const postNow = createServerFn({ method: "POST" })
     if (!["draft", "scheduled"].includes(initialPost.status)) {
       throw new Error(`Post cannot be published from status '${initialPost.status}'`);
     }
-    const url = await publicVideoUrl(initialPost.video_path);
-    const platforms = initialPost.platforms as string[];
     if (!initialPost.video_path) throw new Error("Upload a video before publishing this post");
+    const platforms = (initialPost.platforms ?? []) as string[];
     if (!platforms.some((platform) => platform === "tiktok" || platform === "instagram")) {
       throw new Error("Select TikTok or Instagram before publishing this post");
     }
@@ -42,6 +41,7 @@ export const postNow = createServerFn({ method: "POST" })
     if (platforms.includes("instagram") && !initialPost.caption_instagram?.trim()) {
       throw new Error("Instagram caption is required before publishing");
     }
+    const url = await publicVideoUrl(initialPost.video_path);
     let claimQuery = supabaseAdmin.from("posts").update({ status: "posting", error: null })
       .eq("id", data.postId).in("status", ["draft", "scheduled"]);
     if (context.userId !== "cron") claimQuery = claimQuery.eq("owner_user_id", context.userId);
