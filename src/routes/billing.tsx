@@ -1,19 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpRight, Check, ShieldCheck } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/billing")({
-  head: () => ({ meta: [{ title: "Get access — Socio-Shark" }] }),
+  head: () => ({ meta: [
+    { title: "Get access — Socio-Shark" },
+    { name: "description", content: "Unlock your private Socio-Shark content library with a one-time $300 payment." },
+    { property: "og:title", content: "Get access — Socio-Shark" },
+    { property: "og:description", content: "Unlock your private Socio-Shark content library with a one-time $300 payment." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: BillingPage,
 });
 
 function BillingPage() {
   const navigate = useNavigate();
   const { user, session, loading } = useAuth();
+  const [returned, setReturned] = useState(false);
+  useEffect(() => { setReturned(new URLSearchParams(window.location.search).get("checkout") === "success"); }, []);
   const paymentLink = import.meta.env.VITE_STRIPE_PAYMENT_LINK_URL;
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["subscription", user?.id],
@@ -77,7 +86,7 @@ function BillingPage() {
           <p className="mt-4 font-mono text-xs opacity-70">Signed in as {user?.email}</p>
         </section>
       )}
-      {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("checkout") === "success" && (
+      {returned && (
         <p role="status" className="border border-border p-4 text-sm">Stripe returned successfully. Waiting for verified payment confirmation…</p>
       )}
     </main>

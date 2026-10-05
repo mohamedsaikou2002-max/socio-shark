@@ -37,7 +37,12 @@ export async function postVideo(videoUrl: string, caption: string): Promise<stri
 
   // FILE_UPLOAD avoids TikTok's URL ownership verification requirement for
   // PULL_FROM_URL, which generally cannot be satisfied for Supabase URLs.
-  const chunkSize = 32 * 1024 * 1024;
+  // TikTok rules: files under 5 MB upload as one chunk; otherwise chunk_size is
+  // 5–64 MB, chunk count = floor(size / chunk_size), and the final chunk
+  // absorbs the remainder (it may be up to 128 MB).
+  const size = bytes.byteLength;
+  const chunkSize = size < 5 * 1024 * 1024 ? size : Math.min(size, 32 * 1024 * 1024);
+  const totalChunks = Math.max(1, Math.floor(size / chunkSize));
   const res = await fetch(`${TIKTOK_BASE}/post/publish/video/init/`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -46,8 +51,8 @@ export async function postVideo(videoUrl: string, caption: string): Promise<stri
       source_info: {
         source: "FILE_UPLOAD",
         video_size: bytes.byteLength,
-        chunk_size: Math.min(chunkSize, bytes.byteLength),
-        total_chunk_count: Math.ceil(bytes.byteLength / chunkSize),
+        chunk_size: chunkSize,
+        total_chunk_count: totalChunks,
       },
     }),
   });
@@ -56,8 +61,9 @@ export async function postVideo(videoUrl: string, caption: string): Promise<stri
     throw new Error(`TikTok: ${JSON.stringify(j)}`);
   }
 
-  for (let offset = 0; offset < bytes.byteLength; offset += chunkSize) {
-    const end = Math.min(offset + chunkSize, bytes.byteLength);
+  for (let i = 0; i < totalChunks; i++) {
+    const offset = i * chunkSize;
+    const end = i === totalChunks - 1 ? size : offset + chunkSize;
     const chunk = bytes.subarray(offset, end);
     const upload = await fetch(j.data.upload_url, {
       method: "PUT",

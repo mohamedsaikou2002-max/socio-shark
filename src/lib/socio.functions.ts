@@ -41,6 +41,7 @@ export const postNow = createServerFn({ method: "POST" })
     if (platforms.includes("instagram") && !initialPost.caption_instagram?.trim()) {
       throw new Error("Instagram caption is required before publishing");
     }
+    const url = await publicVideoUrl(initialPost.video_path);
     let claimQuery = supabaseAdmin.from("posts").update({ status: "posting", error: null })
       .eq("id", data.postId).in("status", ["draft", "scheduled"]);
     if (context.userId !== "cron") claimQuery = claimQuery.eq("owner_user_id", context.userId);
