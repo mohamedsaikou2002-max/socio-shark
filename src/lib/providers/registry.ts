@@ -7,7 +7,7 @@
 // The Settings field and save-time verification then appear automatically.
 // Nothing here may import server-only code — it is imported by the browser.
 
-export type ProviderId = "kling" | "meta" | "tiktok" | "anthropic";
+export type ProviderId = "meta" | "tiktok";
 
 export interface SecretKeyDef {
   /** `app_secrets` row key and `process.env` name — identical by design. */
@@ -39,16 +39,6 @@ export interface ProviderTestResult {
 
 export const PROVIDERS: ProviderDef[] = [
   {
-    id: "kling",
-    label: "Kling",
-    hint: "AI video generation (image → video). Used by single runs and the batch pipeline.",
-    testLabel: "Test Kling keys",
-    keys: [
-      { key: "KLING_ACCESS_KEY", label: "Kling Access Key", hint: "AK — becomes the JWT `iss` claim" },
-      { key: "KLING_SECRET_KEY", label: "Kling Secret Key", hint: "SK — HMAC secret the JWT is signed with" },
-    ],
-  },
-  {
     id: "meta",
     label: "Instagram (Meta Graph)",
     hint: "Publishes Reels through the Meta Graph API.",
@@ -65,15 +55,6 @@ export const PROVIDERS: ProviderDef[] = [
     testLabel: "Test TikTok key",
     keys: [
       { key: "TIKTOK_ACCESS_TOKEN", label: "TikTok Access Token", hint: "TikTok Content Posting API token" },
-    ],
-  },
-  {
-    id: "anthropic",
-    label: "Claude (captions)",
-    hint: "Anthropic API — writes captions and pipeline prompts.",
-    testLabel: "Test Claude key",
-    keys: [
-      { key: "ANTHROPIC_API_KEY", label: "Anthropic API Key", hint: "Used for caption + prompt generation" },
     ],
   },
 ];

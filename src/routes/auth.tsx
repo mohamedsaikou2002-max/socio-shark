@@ -10,9 +10,9 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in — Socio-Shark" },
-      { name: "description", content: "Sign in or create your Socio-Shark account to run the autonomous social posting pipeline." },
+      { name: "description", content: "Sign in to manage your private Socio-Shark media library and review queue." },
       { property: "og:title", content: "Sign in — Socio-Shark" },
-      { property: "og:description", content: "Create an account and start the Socio-Shark autonomous posting pipeline." },
+      { property: "og:description", content: "Create an account to organize, review, and schedule your social content." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -178,7 +178,7 @@ function AuthPage() {
         )}
 
         <p className="text-center font-mono text-[10px] text-muted-foreground">
-          sign in and everything is unlocked
+          $300 verified payment required to unlock the app
         </p>
       </div>
     </div>

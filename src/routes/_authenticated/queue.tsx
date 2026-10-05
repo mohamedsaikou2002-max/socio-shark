@@ -1,113 +1,85 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Post, Vibe } from "@/lib/socio-shared";
+import { Post } from "@/lib/socio-shared";
 import { PostCard } from "@/components/PostCard";
-import { generateCaptions, autoSchedule } from "@/lib/socio.functions";
+import { autoSchedule } from "@/lib/socio.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/queue")({ component: QueuePage });
 
 function QueuePage() {
-  const qc = useQueryClient();
-  const genFn = useServerFn(generateCaptions);
-  const schedFn = useServerFn(autoSchedule);
-  const [busy, setBusy] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const scheduleFn = useServerFn(autoSchedule);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [scheduling, setScheduling] = useState(false);
 
-  const { data: posts = [] } = useQuery({
+  const { data: posts = [], isLoading } = useQuery({
     queryKey: ["posts", "draft"],
     queryFn: async () => {
       const { data, error } = await supabase.from("posts").select("*").eq("status", "draft").order("created_at");
       if (error) throw error;
-      return data as Post[];
+      return (data ?? []) as Post[];
     },
   });
-
-  const { data: vibes = [] } = useQuery({
-    queryKey: ["vibes"],
-    queryFn: async () => (await supabase.from("vibes").select("*")).data as Vibe[],
-  });
-
-  const { data: brief } = useQuery({
-    queryKey: ["brief"],
-    queryFn: async () => {
-      const k = "socio-brief";
-      return localStorage.getItem(k) ?? "";
-    },
-  });
-
-  async function genFor(post: Post) {
-    const vibe = vibes.find((v) => v.id === post.vibe_id) ?? vibes[0];
-    if (!vibe) { toast.error("No vibe configured"); return; }
-    setBusy(post.id);
-    try {
-      const r = await genFn({ data: { vibe: { name: vibe.name, prompt_style: vibe.prompt_style, caption_tone: vibe.caption_tone }, brief: brief ?? "" } });
-      await supabase.from("posts").update({ caption_tiktok: r.tiktok, caption_instagram: r.instagram }).eq("id", post.id);
-      toast.success("Captions generated");
-      qc.invalidateQueries({ queryKey: ["posts"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
-    } finally { setBusy(null); }
-  }
-
-  async function genAll() {
-    for (const p of posts.filter((x) => !x.caption_tiktok)) await genFor(p);
-  }
 
   function toggle(id: string) {
-    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   async function scheduleSelected() {
-    const ids = Array.from(selected);
-    if (!ids.length) return toast.error("Select at least one post");
+    if (!selected.size) return toast.error("Select at least one item");
+    setScheduling(true);
     try {
-      const r = await schedFn({ data: { postIds: ids } });
-      toast.success(`Scheduled ${r.scheduled.length} post${r.scheduled.length === 1 ? "" : "s"}`);
+      const result = await scheduleFn({ data: { postIds: Array.from(selected) } });
+      toast.success(`Scheduled ${result.scheduled.length} item${result.scheduled.length === 1 ? "" : "s"}`);
       setSelected(new Set());
-      qc.invalidateQueries({ queryKey: ["posts"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
+      await queryClient.invalidateQueries({ queryKey: ["posts"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not schedule selected content");
+    } finally {
+      setScheduling(false);
     }
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between flex-wrap gap-3">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Review queue</h1>
-          <p className="text-sm text-muted-foreground mt-1">Generate captions, then schedule into your daily slots.</p>
+          <p className="font-mono text-xs uppercase text-muted-foreground">Your content</p>
+          <h1 className="mt-1 text-2xl font-bold">Review queue</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Select uploaded videos to schedule. Open an item to edit its captions, platforms, and date.</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={genAll} disabled={!posts.length} className="px-3 py-2 border border-border text-sm font-mono disabled:opacity-40">Generate all captions</button>
-          <button onClick={scheduleSelected} disabled={!selected.size} className="px-3 py-2 bg-foreground text-background text-sm font-mono disabled:opacity-40">
-            Schedule {selected.size || ""}
+        {posts.length > 0 && <div className="flex gap-2">
+          <button onClick={() => setSelected(selected.size === posts.length ? new Set() : new Set(posts.map((post) => post.id)))} className="border border-border px-3 py-2 text-sm font-mono">
+            {selected.size === posts.length ? "Clear selection" : "Select all"}
           </button>
-        </div>
-      </div>
+          <button onClick={() => void scheduleSelected()} disabled={!selected.size || scheduling} className="bg-foreground px-3 py-2 text-sm font-mono text-background disabled:opacity-40">
+            {scheduling ? "Scheduling…" : `Schedule ${selected.size || "selected"}`}
+          </button>
+        </div>}
+      </header>
 
-      {posts.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing waiting for review. Upload some videos.</p>
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading queue…</p> : posts.length === 0 ? (
+        <div className="border border-dashed border-border p-10 text-center">
+          <p className="text-sm text-muted-foreground">Nothing waiting in your queue.</p>
+          <Link to="/upload" className="mt-3 inline-block bg-foreground px-4 py-2 text-sm font-mono text-background">Upload videos</Link>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {posts.map((p) => (
-            <div key={p.id} className="relative">
-              <label className="absolute top-2 right-2 z-10 bg-background border border-border w-6 h-6 flex items-center justify-center cursor-pointer">
-                <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggle(p.id)} className="accent-foreground" />
-              </label>
-              <PostCard
-                post={p}
-                action={
-                  <button onClick={() => genFor(p)} disabled={busy === p.id} className="w-full text-[11px] font-mono py-1.5 border border-border hover:bg-muted disabled:opacity-40">
-                    {busy === p.id ? "Generating…" : p.caption_tiktok ? "Regenerate caption" : "Generate caption"}
-                  </button>
-                }
-              />
-            </div>
-          ))}
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          {posts.map((post) => <div key={post.id} className="relative">
+            <label className="absolute right-2 top-2 z-10 flex h-7 w-7 cursor-pointer items-center justify-center border border-border bg-background" aria-label={`Select ${post.id}`}>
+              <input type="checkbox" checked={selected.has(post.id)} onChange={() => toggle(post.id)} className="accent-foreground" />
+            </label>
+            <PostCard post={post} />
+          </div>)}
         </div>
       )}
     </div>

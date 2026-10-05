@@ -5,9 +5,7 @@ import { useAuth, signOut } from "@/hooks/useAuth";
 
 const NAV = [
   { to: "/", label: "Library" },
-  { to: "/products", label: "Products" },
-  { to: "/pipeline", label: "Pipeline" },
-  { to: "/media-prep", label: "Media Prep" },
+  { to: "/products", label: "Media Library" },
   { to: "/upload", label: "Upload" },
   { to: "/queue", label: "Review Queue" },
   { to: "/scheduled", label: "Scheduled" },
@@ -89,7 +87,7 @@ export function AppShell() {
       <footer className="border-t border-border mt-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-xs font-mono text-muted-foreground flex flex-wrap gap-2 justify-between">
           <span>SOCIO-SHARK // v1</span>
-          <span>autonomous social ops</span>
+          <span>content library and queue</span>
         </div>
       </footer>
     </div>

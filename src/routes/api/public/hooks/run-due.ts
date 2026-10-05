@@ -16,9 +16,16 @@ export const Route = createFileRoute("/api/public/hooks/run-due")({
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
         const now = new Date().toISOString();
+        const { data: paidClients, error: clientsError } = await supabaseAdmin
+          .from("subscriptions").select("user_id").in("status", ["active", "trialing"])
+          .or(`current_period_end.is.null,current_period_end.gt.${now}`);
+        if (clientsError) return Response.json({ error: "Could not load paid accounts" }, { status: 500 });
+        const paidClientIds = (paidClients ?? []).map((client) => client.user_id);
+        if (!paidClientIds.length) return Response.json({ ran: 0, results: [], checked: 0, completed: [] });
         const { data: pending, error: pendingError } = await supabaseAdmin.from("posts")
           .select("id,tiktok_post_id,error")
           .eq("status", "posting")
+          .in("owner_user_id", paidClientIds)
           .not("tiktok_post_id", "is", null)
           .limit(10);
         if (pendingError) return Response.json({ error: pendingError.message }, { status: 500 });
@@ -42,6 +49,7 @@ export const Route = createFileRoute("/api/public/hooks/run-due")({
         const { data: due, error } = await supabaseAdmin
           .from("posts").select("id")
           .eq("status", "scheduled")
+          .in("owner_user_id", paidClientIds)
           .lte("scheduled_for", now)
           .limit(10);
         if (error) return Response.json({ error: error.message }, { status: 500 });

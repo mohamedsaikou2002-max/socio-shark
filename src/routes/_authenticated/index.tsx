@@ -28,10 +28,9 @@ function Library() {
         <div className="flex items-start gap-4">
           <SharkLogo className="w-12 h-12 text-foreground shrink-0" />
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Autonomous social ops.</h1>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your content, organized.</h1>
             <p className="mt-2 text-muted-foreground max-w-xl text-sm">
-              Drop your videos in. Socio-Shark writes the captions, queues the posts, and ships them
-              to TikTok and Instagram on schedule — while you sleep.
+              Store your media, select items for the review queue, edit captions and publishing details, and schedule when you are ready.
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Link to="/upload" className="px-4 py-2 bg-foreground text-background text-sm font-mono">+ Upload videos</Link>

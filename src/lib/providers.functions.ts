@@ -4,17 +4,13 @@
 // automatically after every secret save (see secrets.functions.ts).
 import { createServerFn } from "@tanstack/react-start";
 import { providerById, type ProviderId, type ProviderTestResult } from "@/lib/providers/registry";
-import { testKlingAuth } from "@/lib/providers/kling";
 import { testMetaAuth } from "@/lib/providers/meta";
 import { testTikTokAuth } from "@/lib/providers/tiktok";
-import { testAnthropicAuth } from "@/lib/providers/anthropic";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const TESTS: Record<ProviderId, () => Promise<ProviderTestResult>> = {
-  kling: testKlingAuth,
   meta: testMetaAuth,
   tiktok: testTikTokAuth,
-  anthropic: testAnthropicAuth,
 };
 
 /** Run a provider's testAuth(). Never throws — failures come back as results. */

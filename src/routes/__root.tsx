@@ -44,7 +44,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Socio-Shark — Autonomous Social Ops" },
-      { name: "description", content: "Upload videos in bulk. Socio-Shark generates captions, queues posts, and ships them to TikTok and Instagram on schedule." },
+      { name: "description", content: "Store social media content, manage a review queue, and schedule publishing with Socio-Shark." },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),

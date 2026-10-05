@@ -3,8 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Post, Vibe, fmtDate, videoUrl, STATUS_LABEL } from "@/lib/socio-shared";
-import { postNow, generateCaptions } from "@/lib/socio.functions";
+import { Post, fmtDate, STATUS_LABEL } from "@/lib/socio-shared";
+import { useSignedStorageUrl } from "@/hooks/useSignedStorageUrl";
+import { postNow } from "@/lib/socio.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/post/$id")({ component: PostDetail });
@@ -14,12 +15,10 @@ function PostDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const postNowFn = useServerFn(postNow);
-  const genFn = useServerFn(generateCaptions);
   const [tt, setTt] = useState("");
   const [ig, setIg] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
   const [platforms, setPlatforms] = useState<string[]>(["tiktok", "instagram"]);
-  const [vibeId, setVibeId] = useState("");
   const [busy, setBusy] = useState(false);
 
   const { data: post } = useQuery({
@@ -30,27 +29,21 @@ function PostDetail() {
       return data as Post;
     },
   });
-  const { data: vibes = [] } = useQuery({
-    queryKey: ["vibes"],
-    queryFn: async () => (await supabase.from("vibes").select("*")).data as Vibe[],
-  });
+  const videoSrc = useSignedStorageUrl("videos", post?.video_path);
 
   useEffect(() => {
     if (!post) return;
     setTt(post.caption_tiktok ?? "");
     setIg(post.caption_instagram ?? "");
     setPlatforms(post.platforms);
-    setVibeId(post.vibe_id ?? "");
     setScheduledFor(post.scheduled_for ? new Date(post.scheduled_for).toISOString().slice(0, 16) : "");
   }, [post?.id]);
 
   if (!post) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   async function save(extra: Partial<Post> = {}) {
-    const vibe = vibes.find((v) => v.id === vibeId);
     const { error } = await supabase.from("posts").update({
       caption_tiktok: tt, caption_instagram: ig, platforms,
-      vibe_id: vibeId || null, vibe_name: vibe?.name ?? null,
       scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
       ...extra,
     }).eq("id", id);
@@ -82,19 +75,6 @@ function PostDetail() {
     finally { setBusy(false); }
   }
 
-  async function regenerate() {
-    const vibe = vibes.find((v) => v.id === vibeId) ?? vibes[0];
-    if (!vibe) return;
-    setBusy(true);
-    try {
-      const brief = localStorage.getItem("socio-brief") ?? "";
-      const r = await genFn({ data: { vibe: { name: vibe.name, prompt_style: vibe.prompt_style, caption_tone: vibe.caption_tone }, brief } });
-      setTt(r.tiktok); setIg(r.instagram);
-      toast.success("Captions generated");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
-    finally { setBusy(false); }
-  }
-
   async function del() {
     if (!post || !confirm("Delete this post?")) return;
     await supabase.storage.from("videos").remove([post.video_path]);
@@ -107,7 +87,7 @@ function PostDetail() {
     <div className="grid md:grid-cols-[300px_1fr] gap-6">
       <div className="space-y-3">
         <div className="aspect-[9/16] bg-muted overflow-hidden border border-border">
-          <video src={videoUrl(post.video_path)} controls playsInline className="w-full h-full object-cover" />
+          <video src={videoSrc ?? undefined} controls playsInline className="w-full h-full object-cover" />
         </div>
         <div className="border border-border p-3 text-xs space-y-1 font-mono">
           <p className="flex justify-between"><span className="text-muted-foreground">Status</span><span>{STATUS_LABEL[post.status]}</span></p>
@@ -120,13 +100,6 @@ function PostDetail() {
       </div>
 
       <div className="space-y-5">
-        <div>
-          <label className="text-xs font-mono uppercase text-muted-foreground">Vibe</label>
-          <select value={vibeId} onChange={(e) => setVibeId(e.target.value)} className="mt-1 w-full bg-background border border-border px-3 py-2 text-sm">
-            {vibes.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-          </select>
-        </div>
-
         <div className="flex items-center gap-4">
           {(["tiktok", "instagram"] as const).map((p) => (
             <label key={p} className="flex items-center gap-2 text-sm font-mono">
@@ -134,7 +107,6 @@ function PostDetail() {
               {p}
             </label>
           ))}
-          <button onClick={regenerate} disabled={busy} className="ml-auto px-3 py-1.5 border border-border text-xs font-mono">{busy ? "…" : "Regenerate captions"}</button>
         </div>
 
         <div>

@@ -126,6 +126,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          owner_user_id: string | null
           caption_instagram: string | null
           caption_tiktok: string | null
           created_at: string
@@ -147,6 +148,7 @@ export type Database = {
           video_path: string
         }
         Insert: {
+          owner_user_id?: string | null
           caption_instagram?: string | null
           caption_tiktok?: string | null
           created_at?: string
@@ -168,6 +170,7 @@ export type Database = {
           video_path: string
         }
         Update: {
+          owner_user_id?: string | null
           caption_instagram?: string | null
           caption_tiktok?: string | null
           created_at?: string
@@ -200,6 +203,7 @@ export type Database = {
       }
       products: {
         Row: {
+          owner_user_id: string | null
           brief: string | null
           created_at: string
           id: string
@@ -208,6 +212,7 @@ export type Database = {
           videos_generated: number
         }
         Insert: {
+          owner_user_id?: string | null
           brief?: string | null
           created_at?: string
           id?: string
@@ -216,6 +221,7 @@ export type Database = {
           videos_generated?: number
         }
         Update: {
+          owner_user_id?: string | null
           brief?: string | null
           created_at?: string
           id?: string
@@ -248,6 +254,7 @@ export type Database = {
       }
       saved_prompts: {
         Row: {
+          owner_user_id: string | null
           created_at: string
           duration: number
           id: string
@@ -259,6 +266,7 @@ export type Database = {
           vibe_id: string | null
         }
         Insert: {
+          owner_user_id?: string | null
           created_at?: string
           duration?: number
           id?: string
@@ -270,6 +278,7 @@ export type Database = {
           vibe_id?: string | null
         }
         Update: {
+          owner_user_id?: string | null
           created_at?: string
           duration?: number
           id?: string
@@ -284,6 +293,7 @@ export type Database = {
       }
       schedule_slots: {
         Row: {
+          owner_user_id: string | null
           created_at: string
           enabled: boolean
           hour: number
@@ -292,6 +302,7 @@ export type Database = {
           platforms: string[]
         }
         Insert: {
+          owner_user_id?: string | null
           created_at?: string
           enabled?: boolean
           hour: number
@@ -300,6 +311,7 @@ export type Database = {
           platforms?: string[]
         }
         Update: {
+          owner_user_id?: string | null
           created_at?: string
           enabled?: boolean
           hour?: number
@@ -311,29 +323,44 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          amount_paid_cents: number | null
           current_period_end: string | null
+          currency: string | null
           status: string
+          stripe_checkout_session_id: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          amount_paid_cents?: number | null
           current_period_end?: string | null
+          currency?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          amount_paid_cents?: number | null
           current_period_end?: string | null
+          currency?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
         }
+        Relationships: []
+      }
+      stripe_webhook_events: {
+        Row: { event_id: string; event_type: string; received_at: string }
+        Insert: { event_id: string; event_type: string; received_at?: string }
+        Update: { event_id?: string; event_type?: string; received_at?: string }
         Relationships: []
       }
       user_roles: {

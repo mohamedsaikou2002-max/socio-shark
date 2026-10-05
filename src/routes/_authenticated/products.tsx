@@ -1,333 +1,149 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { useState, useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
-import { Vibe } from "@/lib/socio-shared";
-import { startKlingGeneration, pollKlingPost } from "@/lib/kling.functions";
+import { useAuth } from "@/hooks/useAuth";
+import { SignedStorageImage } from "@/hooks/useSignedStorageUrl";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/products")({ component: ProductsPage });
+export const Route = createFileRoute("/_authenticated/products")({ component: MediaLibrary });
 
-interface Product {
+interface Asset {
   id: string;
   created_at: string;
   image_path: string;
   name: string | null;
-  videos_generated: number;
 }
 
-function imgUrl(path: string) {
-  return supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
-}
-
-function ProductsPage() {
-  const qc = useQueryClient();
-  const startFn = useServerFn(startKlingGeneration);
-  const pollFn = useServerFn(pollKlingPost);
+function MediaLibrary() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(0);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [vibeId, setVibeId] = useState<string>("");
-  const [duration, setDuration] = useState<5 | 10>(5);
-  const [extraPrompt, setExtraPrompt] = useState("");
-  const [generating, setGenerating] = useState<Set<string>>(new Set());
-  const [savingTitle, setSavingTitle] = useState("");
-  const [activePromptId, setActivePromptId] = useState<string | null>(null);
 
-  interface SavedPrompt {
-    id: string; title: string; prompt: string; vibe_id: string | null;
-    duration: number; use_count: number; last_used_at: string | null;
-  }
-
-  const { data: savedPrompts = [] } = useQuery({
-    queryKey: ["saved_prompts"],
+  const { data: assets = [], isLoading } = useQuery({
+    queryKey: ["assets"],
     queryFn: async () => {
-      const { data } = await supabase.from("saved_prompts").select("*")
-        .order("last_used_at", { ascending: false, nullsFirst: false })
+      const { data, error } = await supabase.from("products").select("id,created_at,image_path,name")
         .order("created_at", { ascending: false });
-      return (data ?? []) as SavedPrompt[];
-    },
-  });
-
-  async function savePrompt() {
-    const title = savingTitle.trim();
-    if (!title) { toast.error("Give it a title"); return; }
-    if (!extraPrompt.trim()) { toast.error("Prompt is empty"); return; }
-    const { error } = await supabase.from("saved_prompts").insert({
-      title, prompt: extraPrompt.trim(), vibe_id: vibeId || null, duration,
-    });
-    if (error) { toast.error(error.message); return; }
-    setSavingTitle("");
-    qc.invalidateQueries({ queryKey: ["saved_prompts"] });
-    toast.success("Prompt saved");
-  }
-
-  async function updateActivePrompt() {
-    if (!activePromptId) return;
-    const { error } = await supabase.from("saved_prompts").update({
-      prompt: extraPrompt.trim(), vibe_id: vibeId || null, duration,
-    }).eq("id", activePromptId);
-    if (error) { toast.error(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["saved_prompts"] });
-    toast.success("Prompt updated");
-  }
-
-  function loadPrompt(p: SavedPrompt) {
-    setExtraPrompt(p.prompt);
-    setVibeId(p.vibe_id ?? "");
-    setDuration((p.duration === 10 ? 10 : 5) as 5 | 10);
-    setActivePromptId(p.id);
-    toast.success(`Loaded "${p.title}"`);
-  }
-
-  async function deletePrompt(id: string) {
-    if (!confirm("Delete this saved prompt?")) return;
-    await supabase.from("saved_prompts").delete().eq("id", id);
-    if (activePromptId === id) setActivePromptId(null);
-    qc.invalidateQueries({ queryKey: ["saved_prompts"] });
-  }
-
-  const { data: products = [] } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Product[];
+      return (data ?? []) as Asset[];
     },
   });
 
-  const { data: vibes = [] } = useQuery({
-    queryKey: ["vibes"],
-    queryFn: async () => (await supabase.from("vibes").select("*").order("name")).data as Vibe[],
-  });
+  async function storeImage(file: File | Blob, name: string, contentType: string) {
+    if (!user) throw new Error("Sign in to upload content");
+    const extension = name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("product-images").upload(path, file, { contentType });
+    if (uploadError) throw uploadError;
+    const { error: rowError } = await supabase.from("products").insert({ image_path: path, name });
+    if (rowError) {
+      await supabase.storage.from("product-images").remove([path]);
+      throw rowError;
+    }
+  }
 
-  // Poll any in-flight generations every 8s
-  const { data: pendingPosts = [] } = useQuery({
-    queryKey: ["posts", "generating"],
-    queryFn: async () => {
-      const { data } = await supabase.from("posts").select("id,kling_task_id,generation_status").eq("generation_status", "generating");
-      return data ?? [];
-    },
-    refetchInterval: 8000,
-  });
-
-  useEffect(() => {
-    if (!pendingPosts.length) return;
-    pendingPosts.forEach(async (p) => {
-      try {
-        const r = await pollFn({ data: { postId: p.id } });
-        if (r.status === "ready") { toast.success("Video ready"); qc.invalidateQueries(); }
-        if (r.status === "failed") { toast.error(`Generation failed: ${r.error}`); qc.invalidateQueries(); }
-      } catch { /* keep polling */ }
-    });
-  }, [pendingPosts, pollFn, qc]);
-
-  async function onFiles(files: FileList | null) {
+  async function uploadFiles(files: FileList | null) {
     if (!files?.length) return;
-    setUploading(files.length);
-    let done = 0;
-    for (const file of Array.from(files)) {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${crypto.randomUUID()}.${ext}`;
-      const up = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type });
-      if (up.error) { toast.error(`Upload failed: ${file.name}`); continue; }
-      await supabase.from("products").insert({ image_path: path, name: file.name });
-      done++;
-      setUploading(files.length - done);
+    const images = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    if (!images.length) return toast.error("Choose image files to add to your library");
+    setUploading(images.length);
+    let saved = 0;
+    for (const file of images) {
+      try {
+        await storeImage(file, file.name, file.type || "image/jpeg");
+        saved++;
+      } catch (error) {
+        toast.error(`${file.name}: ${error instanceof Error ? error.message : "Upload failed"}`);
+      }
+      setUploading(images.length - saved);
     }
     setUploading(0);
     if (inputRef.current) inputRef.current.value = "";
-    qc.invalidateQueries({ queryKey: ["products"] });
-    toast.success(`Uploaded ${done} image${done === 1 ? "" : "s"}`);
+    await queryClient.invalidateQueries({ queryKey: ["assets"] });
+    if (saved) toast.success(`Added ${saved} image${saved === 1 ? "" : "s"} to your library`);
   }
 
-  async function onZip(file: File | null) {
+  async function importZip(file: File | null) {
     if (!file) return;
-    if (!/\.zip$/i.test(file.name)) { toast.error("Pick a .zip file"); return; }
-    toast.info("Extracting ZIP…");
-    const zip = await JSZip.loadAsync(file);
-    const entries = Object.values(zip.files).filter(
-      (f) => !f.dir && /\.(jpe?g|png|webp)$/i.test(f.name),
-    );
-    if (!entries.length) { toast.error("No images found in ZIP"); return; }
-    setUploading(entries.length);
-    let done = 0;
-    for (const entry of entries) {
-      const blob = await entry.async("blob");
-      const ext = entry.name.split(".").pop()!.toLowerCase();
-      const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
-      const path = `${crypto.randomUUID()}.${ext}`;
-      const up = await supabase.storage.from("product-images").upload(path, blob, { contentType: mime });
-      if (up.error) { console.error(up.error); continue; }
-      await supabase.from("products").insert({ image_path: path, name: entry.name.split("/").pop() ?? entry.name });
-      done++;
-      setUploading(entries.length - done);
-    }
-    setUploading(0);
-    qc.invalidateQueries({ queryKey: ["products"] });
-    toast.success(`Imported ${done} image${done === 1 ? "" : "s"} from ZIP`);
-  }
-
-  async function generate(p: Product) {
-    setBusy(p.id);
+    if (!/\.zip$/i.test(file.name)) return toast.error("Choose a .zip file");
     try {
-      const r = await startFn({ data: { productId: p.id, vibeId: vibeId || undefined, prompt: extraPrompt || undefined, duration } });
-      setGenerating((s) => new Set(s).add(r.postId));
-      if (activePromptId) {
-        const sp = savedPrompts.find((x) => x.id === activePromptId);
-        await supabase.from("saved_prompts").update({
-          use_count: (sp?.use_count ?? 0) + 1,
-          last_used_at: new Date().toISOString(),
-        }).eq("id", activePromptId);
-        qc.invalidateQueries({ queryKey: ["saved_prompts"] });
+      const zip = await JSZip.loadAsync(file);
+      const entries = Object.values(zip.files).filter((entry) => !entry.dir && /\.(jpe?g|png|webp)$/i.test(entry.name));
+      if (!entries.length) return toast.error("No JPG, PNG, or WEBP images found in that ZIP");
+      setUploading(entries.length);
+      let saved = 0;
+      for (const entry of entries) {
+        const blob = await entry.async("blob");
+        const extension = entry.name.split(".").pop()?.toLowerCase() ?? "jpg";
+        const mime = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+        try {
+          await storeImage(blob, entry.name.split("/").pop() ?? entry.name, mime);
+          saved++;
+        } catch (error) {
+          toast.error(`${entry.name}: ${error instanceof Error ? error.message : "Upload failed"}`);
+        }
+        setUploading(entries.length - saved);
       }
-      toast.success("Generation started — check back in ~1–3 min");
-      qc.invalidateQueries();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed");
-    } finally { setBusy(null); }
+      setUploading(0);
+      await queryClient.invalidateQueries({ queryKey: ["assets"] });
+      if (saved) toast.success(`Imported ${saved} image${saved === 1 ? "" : "s"}`);
+    } catch (error) {
+      setUploading(0);
+      toast.error(error instanceof Error ? error.message : "Could not open ZIP file");
+    }
   }
 
-  async function deleteProduct(p: Product) {
-    if (!confirm("Delete this product image?")) return;
-    await supabase.storage.from("product-images").remove([p.image_path]);
-    await supabase.from("products").delete().eq("id", p.id);
-    qc.invalidateQueries({ queryKey: ["products"] });
+  async function deleteAsset(asset: Asset) {
+    if (!confirm(`Delete ${asset.name ?? "this image"}?`)) return;
+    const { error: fileError } = await supabase.storage.from("product-images").remove([asset.image_path]);
+    if (fileError) return toast.error(fileError.message);
+    const { error } = await supabase.from("products").delete().eq("id", asset.id);
+    if (error) return toast.error(error.message);
+    await queryClient.invalidateQueries({ queryKey: ["assets"] });
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Products</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Upload product photos in bulk. Generate Kling videos from each — they land as drafts in the Review Queue.
-        </p>
-      </div>
+      <header>
+        <p className="font-mono text-xs uppercase text-muted-foreground">Your content</p>
+        <h1 className="mt-2 text-2xl font-bold">Media library</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Store and organize image assets for your account. Upload videos to add them directly to the review queue.</p>
+      </header>
 
-      {/* Upload */}
       <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); onFiles(e.dataTransfer.files); }}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => { event.preventDefault(); void uploadFiles(event.dataTransfer.files); }}
         className="border-2 border-dashed border-border p-8 text-center"
       >
-        <input ref={inputRef} type="file" multiple accept="image/*" onChange={(e) => onFiles(e.target.files)} className="hidden" id="prod-up" />
-        <input type="file" accept=".zip,application/zip" onChange={(e) => onZip(e.target.files?.[0] ?? null)} className="hidden" id="prod-zip" />
-        <div className="flex gap-2 justify-center flex-wrap">
-          <label htmlFor="prod-up" className="cursor-pointer inline-block px-4 py-2 bg-foreground text-background text-sm font-mono">
-            {uploading ? `Uploading ${uploading}…` : "Upload images"}
+        <input ref={inputRef} type="file" multiple accept="image/*" onChange={(event) => void uploadFiles(event.target.files)} className="hidden" id="asset-upload" />
+        <input type="file" accept=".zip,application/zip" onChange={(event) => void importZip(event.target.files?.[0] ?? null)} className="hidden" id="asset-zip" />
+        <div className="flex justify-center gap-2 flex-wrap">
+          <label htmlFor="asset-upload" className="cursor-pointer bg-foreground px-4 py-2 text-sm font-mono text-background">
+            {uploading ? `Uploading ${uploading}…` : "Add images"}
           </label>
-          <label htmlFor="prod-zip" className="cursor-pointer inline-block px-4 py-2 border border-border text-sm font-mono hover:bg-foreground hover:text-background">
-            Import ZIP
-          </label>
+          <label htmlFor="asset-zip" className="cursor-pointer border border-border px-4 py-2 text-sm font-mono hover:bg-muted">Import ZIP</label>
         </div>
-        <p className="text-xs font-mono text-muted-foreground mt-3">or drag & drop · JPG/PNG/WEBP · ZIP imports all images at root</p>
+        <p className="mt-3 text-xs font-mono text-muted-foreground">Drop images here · JPG / PNG / WEBP · bulk ZIP supported</p>
       </div>
 
-      {/* Generation controls */}
-      <div className="border border-border p-4 space-y-3">
-        <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Generation defaults</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="text-[10px] font-mono uppercase block mb-1">Vibe</label>
-            <select value={vibeId} onChange={(e) => setVibeId(e.target.value)} className="w-full bg-background border border-border px-2 py-1.5 text-sm font-mono">
-              <option value="">Random</option>
-              {vibes.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-mono uppercase block mb-1">Duration</label>
-            <select value={duration} onChange={(e) => setDuration(+e.target.value as 5 | 10)} className="w-full bg-background border border-border px-2 py-1.5 text-sm font-mono">
-              <option value={5}>5 seconds</option>
-              <option value={10}>10 seconds</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-[10px] font-mono uppercase block mb-1">Prompt</label>
-            <textarea value={extraPrompt} onChange={(e) => { setExtraPrompt(e.target.value); }} placeholder="e.g. slow zoom, golden hour, cinematic"
-              rows={2} className="w-full bg-background border border-border px-2 py-1.5 text-sm font-mono resize-y" />
-          </div>
-        </div>
-
-        {/* Save / update prompt row */}
-        <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-border">
-          <input value={savingTitle} onChange={(e) => setSavingTitle(e.target.value)} placeholder="Title to save current prompt as…"
-            className="flex-1 min-w-[180px] bg-background border border-border px-2 py-1.5 text-xs font-mono" />
-          <button onClick={savePrompt} className="px-3 py-1.5 text-[11px] font-mono border border-border hover:bg-foreground hover:text-background">+ Save prompt</button>
-          {activePromptId && (
-            <>
-              <span className="text-[10px] font-mono text-muted-foreground">editing: {savedPrompts.find(p => p.id === activePromptId)?.title}</span>
-              <button onClick={updateActivePrompt} className="px-3 py-1.5 text-[11px] font-mono bg-foreground text-background">Update</button>
-              <button onClick={() => setActivePromptId(null)} className="px-2 py-1.5 text-[10px] font-mono border border-border">Clear</button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Saved prompts library */}
-      {savedPrompts.length > 0 && (
-        <div className="border border-border p-4 space-y-2">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground">Saved prompts ({savedPrompts.length})</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {savedPrompts.map((sp) => {
-              const vibeName = vibes.find((v) => v.id === sp.vibe_id)?.name;
-              const isActive = sp.id === activePromptId;
-              return (
-                <div key={sp.id} className={`border p-2 space-y-1 ${isActive ? "border-foreground" : "border-border"}`}>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-bold flex-1 truncate">{sp.title}</p>
-                    <span className="text-[9px] font-mono text-muted-foreground">{sp.use_count}×</span>
-                  </div>
-                  <p className="text-[10px] font-mono text-muted-foreground line-clamp-2">{sp.prompt}</p>
-                  <p className="text-[9px] font-mono text-muted-foreground">
-                    {sp.duration}s · {vibeName ?? "random vibe"}
-                  </p>
-                  <div className="flex gap-1 pt-1">
-                    <button onClick={() => loadPrompt(sp)} className="flex-1 text-[10px] font-mono py-1 bg-foreground text-background">Load</button>
-                    <button onClick={() => deletePrompt(sp.id)} className="px-2 text-[10px] font-mono border border-border hover:bg-destructive hover:text-destructive-foreground">Del</button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Grid */}
-      {products.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No products yet. Upload some images above.</p>
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading library…</p> : assets.length === 0 ? (
+        <p className="border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Your image library is empty.</p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {products.map((p) => (
-            <div key={p.id} className="border border-border bg-card">
-              <div className="aspect-square bg-muted overflow-hidden">
-                <img src={imgUrl(p.image_path)} alt={p.name ?? ""} className="w-full h-full object-cover" />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+          {assets.map((asset) => (
+            <article key={asset.id} className="border border-border bg-card">
+              <div className="aspect-square overflow-hidden bg-muted">
+                <SignedStorageImage bucket="product-images" path={asset.image_path} alt={asset.name ?? ""} className="h-full w-full object-cover" />
               </div>
-              <div className="p-2 space-y-2">
-                <p className="text-[11px] font-mono truncate" title={p.name ?? ""}>{p.name ?? "—"}</p>
-                <p className="text-[10px] font-mono text-muted-foreground">{p.videos_generated} video{p.videos_generated === 1 ? "" : "s"} generated</p>
-                <button
-                  onClick={() => generate(p)}
-                  disabled={busy === p.id}
-                  className="w-full text-[11px] font-mono py-1.5 bg-foreground text-background disabled:opacity-40"
-                >
-                  {busy === p.id ? "Starting…" : "Generate AI Video"}
-                </button>
-                <button onClick={() => deleteProduct(p)} className="w-full text-[10px] font-mono py-1 border border-border hover:bg-destructive hover:text-destructive-foreground">
-                  Delete
-                </button>
+              <div className="space-y-2 p-2">
+                <p className="truncate text-[11px] font-mono" title={asset.name ?? ""}>{asset.name ?? "Untitled image"}</p>
+                <button onClick={() => void deleteAsset(asset)} className="w-full border border-border py-1 text-[10px] font-mono hover:bg-destructive hover:text-destructive-foreground">Delete</button>
               </div>
-            </div>
+            </article>
           ))}
-        </div>
-      )}
-
-      {pendingPosts.length > 0 && (
-        <div className="border border-border p-3 text-xs font-mono">
-          <span className="text-muted-foreground">In progress: </span>
-          {pendingPosts.length} video{pendingPosts.length === 1 ? "" : "s"} generating · auto-refreshing
-          <Link to="/queue" className="ml-3 underline">View queue →</Link>
         </div>
       )}
     </div>

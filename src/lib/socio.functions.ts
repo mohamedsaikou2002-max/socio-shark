@@ -1,69 +1,38 @@
-// Server functions for Socio-Shark
-// Caption generation via Anthropic, posting to TikTok and Instagram.
-// All provider auth lives in src/lib/providers/* and reads through getSecret().
+// Server functions for manually reviewed and scheduled content publishing.
+// Provider credentials live in src/lib/providers/* and the protected secrets store.
 
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { llm } from "@/lib/providers/anthropic";
 import { postReels } from "@/lib/providers/meta";
 import { getTikTokPublishStatus, postVideo } from "@/lib/providers/tiktok";
 import { requireSupabaseAuth, requireSupabaseAuthOrCron } from "@/integrations/supabase/auth-middleware";
-
-interface Vibe {
-  name: string;
-  prompt_style: string;
-  caption_tone: string;
-}
-
-function captionPrompt(vibe: Vibe, brief: string, platform: "tiktok" | "instagram") {
-  const limit = platform === "instagram" ? 2200 : 150;
-  return `Write a ${platform} caption for a marketing video.
-
-PRODUCT BRIEF:
-${brief.trim() || "(no brief provided — write a generic punchy caption)"}
-
-VIBE: ${vibe.name} — ${vibe.caption_tone}
-
-Rules:
-- Hook in the first line
-- 3–5 relevant hashtags at the end
-- ${platform === "tiktok" ? "punchy, short sentences, no emoji at start" : "slightly longer, mild storytelling"}
-- Stay under ${limit} characters
-- Sound human, not AI marketing copy
-
-Return ONLY the caption.`;
-}
-
-export const generateCaptions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { vibe: Vibe; brief: string }) => d)
-  .handler(async ({ data }) => ({
-    tiktok: await llm(captionPrompt(data.vibe, data.brief, "tiktok"), 250),
-    instagram: await llm(captionPrompt(data.vibe, data.brief, "instagram"), 600),
-  }));
 
 // ── Posting ────────────────────────────────────────────────────────────────
 // Instagram (Meta Graph) and TikTok implementations live in their provider
 // modules — see providers/meta.ts and providers/tiktok.ts.
 
 async function publicVideoUrl(path: string) {
-  const { data } = supabaseAdmin.storage.from("videos").getPublicUrl(path);
-  return data.publicUrl;
+  const { data, error } = await supabaseAdmin.storage.from("videos").createSignedUrl(path, 3600);
+  if (error) throw error;
+  return data.signedUrl;
 }
 
 export const postNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuthOrCron])
   .inputValidator((d: { postId: string }) => d)
-  .handler(async ({ data }) => {
-    const { data: initialPost, error } = await supabaseAdmin
-      .from("posts").select("*").eq("id", data.postId).single();
+  .handler(async ({ data, context }) => {
+    let postQuery = supabaseAdmin.from("posts").select("*").eq("id", data.postId);
+    if (context.userId !== "cron") postQuery = postQuery.eq("owner_user_id", context.userId);
+    const { data: initialPost, error } = await postQuery.single();
     if (error || !initialPost) throw new Error("Post not found");
+    const ownerUserId = initialPost.owner_user_id;
+    if (!ownerUserId) throw new Error("Post is not assigned to a client account");
     if (!["draft", "scheduled"].includes(initialPost.status)) {
       throw new Error(`Post cannot be published from status '${initialPost.status}'`);
     }
     const url = await publicVideoUrl(initialPost.video_path);
     const platforms = initialPost.platforms as string[];
-    if (!initialPost.video_path) throw new Error("Upload or generate a video before publishing this post");
+    if (!initialPost.video_path) throw new Error("Upload a video before publishing this post");
     if (!platforms.some((platform) => platform === "tiktok" || platform === "instagram")) {
       throw new Error("Select TikTok or Instagram before publishing this post");
     }
@@ -73,12 +42,10 @@ export const postNow = createServerFn({ method: "POST" })
     if (platforms.includes("instagram") && !initialPost.caption_instagram?.trim()) {
       throw new Error("Instagram caption is required before publishing");
     }
-    const { data: claimed, error: claimError } = await supabaseAdmin.from("posts")
-      .update({ status: "posting", error: null })
-      .eq("id", data.postId)
-      .in("status", ["draft", "scheduled"])
-      .select("id")
-      .maybeSingle();
+    let claimQuery = supabaseAdmin.from("posts").update({ status: "posting", error: null })
+      .eq("id", data.postId).in("status", ["draft", "scheduled"]);
+    if (context.userId !== "cron") claimQuery = claimQuery.eq("owner_user_id", context.userId);
+    const { data: claimed, error: claimError } = await claimQuery.select("id").maybeSingle();
     if (claimError) throw claimError;
     if (!claimed) throw new Error("Post is already being published or is no longer available");
 
@@ -98,7 +65,7 @@ export const postNow = createServerFn({ method: "POST" })
         tiktok_post_id: result.tiktok ?? null,
         ig_post_id: result.ig ?? null,
         error: null,
-      }).eq("id", post.id);
+      }).eq("id", post.id).eq("owner_user_id", ownerUserId);
       if (updateError) throw updateError;
       return { ok: true, pending: isTikTokPending, ...result };
     } catch (e) {
@@ -108,7 +75,7 @@ export const postNow = createServerFn({ method: "POST" })
         tiktok_post_id: result.tiktok ?? null,
         ig_post_id: result.ig ?? null,
         error: msg,
-      }).eq("id", post.id);
+      }).eq("id", post.id).eq("owner_user_id", ownerUserId);
       return { ok: false, error: msg, ...result };
     }
   });
@@ -117,16 +84,17 @@ export const postNow = createServerFn({ method: "POST" })
 export const autoSchedule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { postIds: string[] }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const postIds = [...new Set(data.postIds)];
     if (!postIds.length || postIds.length > 100) {
       throw new Error("Choose between 1 and 100 draft posts to schedule");
     }
     const { data: slots } = await supabaseAdmin.from("schedule_slots")
-      .select("*").eq("enabled", true).order("hour").order("minute");
+      .select("*").eq("owner_user_id", context.userId).eq("enabled", true).order("hour").order("minute");
     if (!slots?.length) throw new Error("No schedule slots configured");
     const { data: taken } = await supabaseAdmin.from("posts")
       .select("scheduled_for").in("status", ["scheduled", "posted", "posting"])
+      .eq("owner_user_id", context.userId)
       .gte("scheduled_for", new Date().toISOString());
     const takenSet = new Set((taken ?? []).map((t) => t.scheduled_for));
 
@@ -153,7 +121,7 @@ export const autoSchedule = createServerFn({ method: "POST" })
       cursor = at;
       const { data: updated, error: updateError } = await supabaseAdmin.from("posts").update({
         status: "scheduled", scheduled_for: at.toISOString(),
-      }).eq("id", id).eq("status", "draft").select("id").maybeSingle();
+      }).eq("id", id).eq("owner_user_id", context.userId).eq("status", "draft").select("id").maybeSingle();
       if (updateError) throw updateError;
       if (!updated) throw new Error(`Post ${id} is missing or is no longer a draft`);
       results.push({ id, at: at.toISOString() });

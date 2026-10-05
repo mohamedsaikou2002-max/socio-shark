@@ -67,6 +67,16 @@ function createAuthMiddleware(allowCron: boolean) {
         throw new Response('Unauthorized: No user ID found in token', { status: 401 });
       }
       claims = data.claims as typeof claims;
+      const { data: active, error: membershipError } = await supabase.rpc('is_member_active', {
+        _user_id: claims.sub,
+      });
+      if (membershipError) {
+        console.error('[Billing] Could not verify membership', membershipError);
+        throw new Response('Unable to verify app access. Try again shortly.', { status: 503 });
+      }
+      if (!active) {
+        throw new Response('An active $300 access payment is required.', { status: 402 });
+      }
     } else {
       claims = { sub: 'cron' };
     }

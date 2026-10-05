@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Vibe } from "@/lib/socio-shared";
 import { testProvider } from "@/lib/providers.functions";
 import { saveSecret, listSecretKeys, deleteSecret } from "@/lib/secrets.functions";
 import { PROVIDERS, type ProviderTestResult } from "@/lib/providers/registry";
@@ -15,9 +14,6 @@ interface Slot { id: string; hour: number; minute: number; enabled: boolean; pla
 
 function Settings() {
   const qc = useQueryClient();
-  const [brief, setBrief] = useState("");
-  useEffect(() => { setBrief(localStorage.getItem("socio-brief") ?? ""); }, []);
-
   const testFn = useServerFn(testProvider);
   const saveFn = useServerFn(saveSecret);
   const deleteFn = useServerFn(deleteSecret);
@@ -102,11 +98,6 @@ function Settings() {
       return (data ?? []) as Slot[];
     },
   });
-  const { data: vibes = [] } = useQuery({
-    queryKey: ["vibes"],
-    queryFn: async () => (await supabase.from("vibes").select("*").order("name")).data as Vibe[],
-  });
-
   const [newHour, setNewHour] = useState(12);
   const [newMin, setNewMin] = useState(0);
 
@@ -124,23 +115,11 @@ function Settings() {
     qc.invalidateQueries({ queryKey: ["slots"] });
   }
 
-  function saveBrief() {
-    localStorage.setItem("socio-brief", brief);
-    toast.success("Brief saved");
-  }
-
   return (
     <div className="space-y-10 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold">Settings</h1>
       </div>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground">Product brief</h2>
-        <p className="text-xs text-muted-foreground">Used by the AI to write captions in your voice.</p>
-        <textarea value={brief} onChange={(e) => setBrief(e.target.value)} rows={8} placeholder="Product name, what it does, who it's for, key selling points, brand tone, CTA…" className="w-full bg-background border border-border px-3 py-2 text-sm font-mono" />
-        <button onClick={saveBrief} className="px-4 py-2 bg-foreground text-background text-sm font-mono">Save brief</button>
-      </section>
 
       <section className="space-y-3">
         <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground">Daily posting times (UTC)</h2>
@@ -165,20 +144,6 @@ function Settings() {
             <input type="number" min={0} max={59} value={newMin} onChange={(e) => setNewMin(+e.target.value)} className="bg-background border border-border w-20 px-2 py-1 text-sm font-mono" />
           </div>
           <button onClick={addSlot} className="px-3 py-1.5 border border-border text-sm font-mono">+ Add slot</button>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground">Vibes</h2>
-        <p className="text-xs text-muted-foreground">Visual + tone presets used when generating captions.</p>
-        <div className="border border-border divide-y divide-border">
-          {vibes.map((v) => (
-            <div key={v.id} className="p-3">
-              <p className="font-bold text-sm">{v.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5"><span className="font-mono uppercase mr-2">style:</span>{v.prompt_style}</p>
-              <p className="text-xs text-muted-foreground mt-0.5"><span className="font-mono uppercase mr-2">tone:</span>{v.caption_tone}</p>
-            </div>
-          ))}
         </div>
       </section>
 

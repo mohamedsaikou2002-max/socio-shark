@@ -5,8 +5,8 @@
 // then the `app_secrets` table (values pasted into Settings → API Tokens).
 //
 // Every server function that needs an API key must go through these helpers —
-// no direct `process.env.SOME_KEY` reads in feature files, otherwise the
-// Settings UI and the code paths drift apart (that is exactly how Kling broke).
+// no direct `process.env.SOME_KEY` reads in provider code, otherwise the
+// Settings UI and provider configuration can drift apart.
 //
 // This module is import-safe from both server functions and other server-only
 // modules; it must never be imported by a client component.

@@ -4,7 +4,7 @@
 //
 // Reading goes through getSecret() (see secrets.core.ts): env var first, DB
 // fallback — so a key pasted in Settings works on every code path, including
-// the cron/batch pipeline.
+// the publishing providers.
 
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";

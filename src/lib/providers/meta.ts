@@ -2,7 +2,8 @@
 import { requireSecret } from "@/lib/secrets.core";
 import type { ProviderTestResult } from "@/lib/providers/registry";
 
-const GRAPH_BASE = "https://graph.facebook.com/v21.0";
+// Keep this aligned with Meta's current Graph API version.
+const GRAPH_BASE = "https://graph.facebook.com/v26.0";
 
 export async function metaCredentials(): Promise<{ token: string; igId: string }> {
   return {

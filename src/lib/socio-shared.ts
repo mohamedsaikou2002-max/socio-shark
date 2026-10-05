@@ -1,15 +1,6 @@
 // Shared helpers
-import { supabase } from "@/integrations/supabase/client";
 
 export type PostStatus = "draft" | "scheduled" | "posting" | "posted" | "failed";
-
-export interface Vibe {
-  id: string;
-  name: string;
-  prompt_style: string;
-  caption_tone: string;
-  music_mood: string;
-}
 
 export interface Post {
   id: string;
@@ -27,12 +18,7 @@ export interface Post {
   platforms: string[];
   error: string | null;
   notes: string | null;
-  generation_status: string | null;
   source_image_path: string | null;
-}
-
-export function videoUrl(path: string) {
-  return supabase.storage.from("videos").getPublicUrl(path).data.publicUrl;
 }
 
 export function fmtDate(d: string | null) {
