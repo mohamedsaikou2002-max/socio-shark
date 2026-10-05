@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/hooks/useAuth";
 import { SharkLogo } from "@/components/SharkLogo";
 import { toast } from "sonner";
@@ -56,42 +57,15 @@ function AuthPage() {
     }
   }
 
-  // Google sign-in goes straight to Supabase's OAuth endpoint. (The Lovable
-  // cloud-auth broker this used to call lives at "/~oauth/initiate", which only
-  // exists on Lovable hosting — on any self-hosted/dev URL it 404s.)
+  // Use Lovable's managed broker for Google OAuth on the hosted project.
   async function google() {
     if (googleBusy) return;
     setGoogleBusy(true);
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin, skipBrowserRedirect: true },
-      });
-      if (error) throw error;
-      if (!data.url) throw new Error("No OAuth URL returned");
-
-      // Pre-flight the authorize URL so a Supabase-side misconfiguration
-      // (missing client secret, blocked redirect) surfaces as a toast instead
-      // of navigating the tab to a raw JSON error page.
-      try {
-        const res = await fetch(data.url, { redirect: "follow" });
-        if (!res.ok) {
-          const body = await res.text();
-          let msg = body.slice(0, 200);
-          try {
-            const j = JSON.parse(body) as { msg?: string; error_description?: string };
-            msg = j.msg ?? j.error_description ?? msg;
-          } catch {
-            /* keep raw text */
-          }
-          toast.error(`Google sign-in unavailable: ${msg}`);
-          return;
-        }
-      } catch {
-        // Preflight blocked (CORS/offline) — navigate anyway and let the
-        // browser follow the flow.
-      }
-      window.location.assign(data.url);
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      }) as { error?: unknown } | undefined;
+      if (result?.error) throw result.error;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
     } finally {
