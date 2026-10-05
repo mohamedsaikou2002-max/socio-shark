@@ -57,7 +57,8 @@ function AuthPage() {
     }
   }
 
-  // Use Lovable's managed broker for Google OAuth on the hosted project.
+  // Google sign-in uses the managed broker (works in the preview iframe and on
+  // the published Lovable domain).
   async function google() {
     if (googleBusy) return;
     setGoogleBusy(true);

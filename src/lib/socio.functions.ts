@@ -32,7 +32,6 @@ export const postNow = createServerFn({ method: "POST" })
     }
     if (!initialPost.video_path) throw new Error("Upload a video before publishing this post");
     const platforms = (initialPost.platforms ?? []) as string[];
-    if (!initialPost.video_path) throw new Error("Upload a video before publishing this post");
     if (!platforms.some((platform) => platform === "tiktok" || platform === "instagram")) {
       throw new Error("Select TikTok or Instagram before publishing this post");
     }
